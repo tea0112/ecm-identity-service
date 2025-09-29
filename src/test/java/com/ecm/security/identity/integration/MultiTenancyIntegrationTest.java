@@ -433,6 +433,9 @@ class MultiTenancyIntegrationTest {
             "purpose", "CRM synchronization and activity tracking"
         );
         
+        HttpHeaders admin1Headers = new HttpHeaders();
+        admin1Headers.setBearerAuth(admin1Token);
+        admin1Headers.set("X-Tenant-ID", tenant1.getTenantCode());
         HttpEntity<Map<String, Object>> marketplaceEntity = new HttpEntity<>(marketplaceAppRequest, admin1Headers);
         
         ResponseEntity<Map> marketplaceResponse = restTemplate.exchange(

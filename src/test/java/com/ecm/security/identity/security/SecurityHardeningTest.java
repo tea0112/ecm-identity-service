@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -66,7 +67,7 @@ class SecurityHardeningTest {
     void testThreatMitigation() {
         // Test credential stuffing protection
         testUser.setFailedLoginAttempts(5);
-        testUser.setLockedUntil(Instant.now().plusMinutes(15));
+        testUser.setLockedUntil(Instant.now().plus(15, ChronoUnit.MINUTES));
         
         assertTrue(testUser.isLocked());
         assertEquals(5, testUser.getFailedLoginAttempts());
@@ -76,7 +77,7 @@ class SecurityHardeningTest {
         mfaCredential.setCredentialType(UserCredential.CredentialType.TOTP);
         mfaCredential.setVerificationAttempts(3);
         mfaCredential.setMaxVerificationAttempts(3);
-        mfaCredential.setBlockedUntil(Instant.now().plusMinutes(15));
+        mfaCredential.setBlockedUntil(Instant.now().plus(15, ChronoUnit.MINUTES));
         
         assertTrue(mfaCredential.isBlocked());
         assertEquals(3, mfaCredential.getVerificationAttempts());
@@ -84,7 +85,7 @@ class SecurityHardeningTest {
         // Test replay attack protection with nonces
         UserCredential magicLinkCredential = new UserCredential();
         magicLinkCredential.setCredentialType(UserCredential.CredentialType.MAGIC_LINK);
-        magicLinkCredential.setExpiresAt(Instant.now().plusMinutes(5)); // Short-lived
+        magicLinkCredential.setExpiresAt(Instant.now().plus(5, ChronoUnit.MINUTES)); // Short-lived
         magicLinkCredential.setUsageCount(0);
         
         // Use once
@@ -101,7 +102,7 @@ class SecurityHardeningTest {
         // Test device code protection
         UserCredential deviceCodeCredential = new UserCredential();
         deviceCodeCredential.setCredentialType(UserCredential.CredentialType.EMAIL);
-        deviceCodeCredential.setExpiresAt(Instant.now().plusMinutes(10));
+        deviceCodeCredential.setExpiresAt(Instant.now().plus(10, ChronoUnit.MINUTES));
         deviceCodeCredential.setVerificationCode("ABC123");
         
         assertNotNull(deviceCodeCredential.getVerificationCode());
@@ -193,7 +194,7 @@ class SecurityHardeningTest {
         assertEquals(0, anotherUser.getFailedLoginAttempts());
         
         // Test automatic unlock after timeout
-        testUser.setLockedUntil(Instant.now().minusMinutes(1)); // Past lockout time
+        testUser.setLockedUntil(Instant.now().minus(1, ChronoUnit.MINUTES)); // Past lockout time
         assertFalse(testUser.isLocked());
     }
 
@@ -245,10 +246,10 @@ class SecurityHardeningTest {
     void testBackupAndRestoreTokenSafety() {
         // Test zombie token detection after restore
         testSession.setRefreshTokenHash("pre_restore_token");
-        testSession.setCreatedAt(Instant.now().minusHours(2));
+        testSession.setCreatedAt(Instant.now().minus(2, ChronoUnit.HOURS));
         
         // Simulate database restore point
-        Instant restorePoint = Instant.now().minusHours(1);
+        Instant restorePoint = Instant.now().minus(1, ChronoUnit.HOURS);
         
         // Check if token was issued before restore
         boolean isZombieToken = testSession.getCreatedAt().isBefore(restorePoint);
@@ -303,7 +304,7 @@ class SecurityHardeningTest {
         assertNotEquals(compromisedKeyId, compromiseEvent.getSigningKeyId());
         
         // Test global token invalidation
-        testSession.setCreatedAt(compromiseTime.minusMinutes(10)); // Before compromise
+        testSession.setCreatedAt(compromiseTime.minus(10, ChronoUnit.MINUTES)); // Before compromise
         
         boolean shouldInvalidate = testSession.getCreatedAt().isBefore(compromiseTime);
         assertTrue(shouldInvalidate);
@@ -466,7 +467,7 @@ class SecurityHardeningTest {
         session.setSessionId("test_session_123");
         session.setUser(testUser);
         session.setStatus(UserSession.SessionStatus.ACTIVE);
-        session.setExpiresAt(Instant.now().plusMinutes(30));
+        session.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         return session;
     }
 

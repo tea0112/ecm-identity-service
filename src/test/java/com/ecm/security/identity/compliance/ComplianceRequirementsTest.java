@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -104,7 +105,7 @@ class ComplianceRequirementsTest {
         assertTrue(piiEvent.getDescription().contains("[REDACTED]"));
         
         // Test immutability - audit events should not be modifiable after creation
-        testAuditEvent.setTimestamp(Instant.now().minusHours(1));
+        testAuditEvent.setTimestamp(Instant.now().minus(1, ChronoUnit.HOURS));
         testAuditEvent.setEventType(AuditEvent.EventTypes.USER_CREATED);
         testAuditEvent.setEventHash("immutable_hash");
         
@@ -114,7 +115,7 @@ class ComplianceRequirementsTest {
         assertNotNull(testAuditEvent.getEventHash());
         
         // Test SLA guarantees
-        testAuditEvent.setRetentionUntil(Instant.now().plusDays(2555)); // 7 years
+        testAuditEvent.setRetentionUntil(Instant.now().plus(2555, ChronoUnit.DAYS)); // 7 years
         testAuditEvent.setLegalHold(false);
         
         assertTrue(testAuditEvent.requiresRetention());
@@ -188,7 +189,7 @@ class ComplianceRequirementsTest {
         // Test minor consent (COPPA compliance)
         User minorUser = new User();
         minorUser.setIsMinor(true);
-        minorUser.setDateOfBirth(LocalDate.now().minusYears(15));
+        minorUser.setDateOfBirth(LocalDate.now().minus(15, ChronoUnit.YEARS));
         minorUser.setParentEmail("parent@example.com");
         minorUser.setParentalConsentAt(Instant.now());
         
@@ -224,7 +225,7 @@ class ComplianceRequirementsTest {
         AuditEvent legalHoldEvent = new AuditEvent();
         legalHoldEvent.setUserId(testUser.getId());
         legalHoldEvent.setLegalHold(true);
-        legalHoldEvent.setRetentionUntil(Instant.now().plusYears(10));
+        legalHoldEvent.setRetentionUntil(Instant.now().plus(10, ChronoUnit.YEARS));
         legalHoldEvent.setComplianceFlags(new String[]{"litigation_hold", "regulatory_investigation"});
         
         assertTrue(legalHoldEvent.getLegalHold());
@@ -261,7 +262,7 @@ class ComplianceRequirementsTest {
         socialIdentity.setUser(testUser);
         socialIdentity.setProvider("google");
         socialIdentity.setDataSharingConsent(true);
-        socialIdentity.setConsentGivenAt(Instant.now().minusDays(30));
+        socialIdentity.setConsentGivenAt(Instant.now().minus(30, ChronoUnit.DAYS));
         
         // Withdraw consent
         socialIdentity.withdrawConsent();
@@ -360,7 +361,7 @@ class ComplianceRequirementsTest {
         // Create sequence of related events
         AuditEvent suspiciousLogin = new AuditEvent();
         suspiciousLogin.setEventType(AuditEvent.EventTypes.LOGIN_FAILURE);
-        suspiciousLogin.setTimestamp(Instant.now().minusMinutes(10));
+        suspiciousLogin.setTimestamp(Instant.now().minus(10, ChronoUnit.MINUTES));
         suspiciousLogin.setUserId(testUser.getId());
         suspiciousLogin.setCorrelationId(correlationId);
         suspiciousLogin.setIpAddress("192.168.1.100");
@@ -369,7 +370,7 @@ class ComplianceRequirementsTest {
         
         AuditEvent sessionCreated = new AuditEvent();
         sessionCreated.setEventType(AuditEvent.EventTypes.SESSION_CREATED);
-        sessionCreated.setTimestamp(Instant.now().minusMinutes(8));
+        sessionCreated.setTimestamp(Instant.now().minus(8, ChronoUnit.MINUTES));
         sessionCreated.setUserId(testUser.getId());
         sessionCreated.setCorrelationId(correlationId);
         sessionCreated.setSessionId("session_123");
@@ -377,7 +378,7 @@ class ComplianceRequirementsTest {
         
         AuditEvent suspiciousActivity = new AuditEvent();
         suspiciousActivity.setEventType(AuditEvent.EventTypes.SUSPICIOUS_ACTIVITY);
-        suspiciousActivity.setTimestamp(Instant.now().minusMinutes(5));
+        suspiciousActivity.setTimestamp(Instant.now().minus(5, ChronoUnit.MINUTES));
         suspiciousActivity.setUserId(testUser.getId());
         suspiciousActivity.setCorrelationId(correlationId);
         suspiciousActivity.setSessionId("session_123");
@@ -386,7 +387,7 @@ class ComplianceRequirementsTest {
         
         AuditEvent sessionTerminated = new AuditEvent();
         sessionTerminated.setEventType(AuditEvent.EventTypes.SESSION_TERMINATED);
-        sessionTerminated.setTimestamp(Instant.now().minusMinutes(2));
+        sessionTerminated.setTimestamp(Instant.now().minus(2, ChronoUnit.MINUTES));
         sessionTerminated.setUserId(testUser.getId());
         sessionTerminated.setCorrelationId(correlationId);
         sessionTerminated.setSessionId("session_123");

@@ -6,8 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Represents various credential types for users including WebAuthn, TOTP, and recovery codes.
@@ -22,6 +25,8 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserCredential extends BaseEntity {
     
     @NotNull
@@ -178,7 +183,7 @@ public class UserCredential extends BaseEntity {
     
     public void block(String reason) {
         this.status = CredentialStatus.BLOCKED;
-        this.blockedUntil = Instant.now().plusDays(1); // Default 1 day block
+        this.blockedUntil = Instant.now().plus(1, ChronoUnit.DAYS); // Default 1 day block
     }
     
     public void revoke() {
@@ -188,7 +193,7 @@ public class UserCredential extends BaseEntity {
     public void incrementVerificationAttempts() {
         this.verificationAttempts++;
         if (this.verificationAttempts >= this.maxVerificationAttempts) {
-            this.blockedUntil = Instant.now().plusMinutes(15); // Block for 15 minutes
+            this.blockedUntil = Instant.now().plus(15, ChronoUnit.MINUTES); // Block for 15 minutes
         }
     }
     

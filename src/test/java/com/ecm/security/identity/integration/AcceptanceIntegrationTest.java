@@ -22,6 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -344,7 +345,7 @@ class AcceptanceIntegrationTest {
         breakGlassRole.setApprovalRequired(true);
         breakGlassRole.setStatus(UserRole.RoleStatus.PENDING_APPROVAL);
         breakGlassRole.setJustification("Critical system outage - database corruption detected");
-        breakGlassRole.setExpiresAt(Instant.now().plusMinutes(30));
+        breakGlassRole.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         breakGlassRole = roleRepository.save(breakGlassRole);
         
         // Request break-glass activation
@@ -378,7 +379,7 @@ class AcceptanceIntegrationTest {
         ResponseEntity<Map> alertResponse = restTemplate.exchange(
             baseUrl + "/admin/security/alerts/latest",
             HttpMethod.GET,
-            new HttpEntity<>(new HttpHeaders().set("Authorization", "Bearer " + adminToken)),
+            new HttpEntity<>(createAuthHeaders(adminToken)),
             Map.class
         );
         
@@ -402,7 +403,7 @@ class AcceptanceIntegrationTest {
         );
         
         HttpEntity<Map<String, Object>> firstApprovalEntity = new HttpEntity<>(firstApprovalRequest, 
-            new HttpHeaders().set("Authorization", "Bearer " + adminToken));
+            createAuthHeaders(adminToken));
         
         ResponseEntity<Map> firstApprovalResponse = restTemplate.exchange(
             baseUrl + "/admin/break-glass/approve",
@@ -429,7 +430,7 @@ class AcceptanceIntegrationTest {
             baseUrl + "/admin/break-glass/approve",
             HttpMethod.POST,
             new HttpEntity<>(secondApprovalRequest, 
-                new HttpHeaders().set("Authorization", "Bearer " + adminToken)),
+                createAuthHeaders(adminToken)),
             Map.class
         );
         
@@ -816,6 +817,12 @@ class AcceptanceIntegrationTest {
         assertTrue(hasRevocationEvent);
     }
 
+    private HttpHeaders createAuthHeaders(String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+        return headers;
+    }
+    
     private String authenticateUser(String email, String password) {
         Map<String, Object> loginRequest = Map.of(
             "email", email,

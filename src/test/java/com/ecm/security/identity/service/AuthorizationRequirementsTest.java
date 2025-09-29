@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,7 +82,7 @@ class AuthorizationRequirementsTest {
         verify(auditService).logAuthorizationDecision(request, decision);
         
         // Test ReBAC - Relationship-Based Access Control
-        TenantPolicy rebacPolicy = createReBAC Policy();
+        TenantPolicy rebacPolicy = createReBACPolicy();
         rebacPolicy.setSubjects(new String[]{"role:manager", "group:finance"});
         rebacPolicy.setResources(new String[]{"department:finance:*"});
         
@@ -181,7 +182,7 @@ class AuthorizationRequirementsTest {
         // Test time-bound access (JIT - Just-In-Time)
         UserRole jitRole = new UserRole();
         jitRole.setAssignmentType(UserRole.AssignmentType.JIT);
-        jitRole.setExpiresAt(Instant.now().plusMinutes(30));
+        jitRole.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         jitRole.setJustification("Emergency database access for incident #12345");
         jitRole.setApprovalRequired(true);
         jitRole.setStatus(UserRole.RoleStatus.PENDING_APPROVAL);
@@ -209,7 +210,7 @@ class AuthorizationRequirementsTest {
         
         // Test temporary access expiration
         UserRole expiredRole = new UserRole();
-        expiredRole.setExpiresAt(Instant.now().minusMinutes(10));
+        expiredRole.setExpiresAt(Instant.now().minus(10, ChronoUnit.MINUTES));
         
         assertTrue(expiredRole.isExpired());
         assertFalse(expiredRole.isActive());
@@ -384,7 +385,7 @@ class AuthorizationRequirementsTest {
         session.setSessionId("test_session_123");
         session.setUser(testUser);
         session.setStatus(UserSession.SessionStatus.ACTIVE);
-        session.setExpiresAt(Instant.now().plusMinutes(30));
+        session.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         session.setRiskLevel(UserSession.RiskLevel.LOW);
         session.setMfaCompleted(true);
         return session;
@@ -412,7 +413,7 @@ class AuthorizationRequirementsTest {
         return policy;
     }
 
-    private TenantPolicy createReBAC Policy() {
+    private TenantPolicy createReBACPolicy() {
         TenantPolicy policy = new TenantPolicy();
         policy.setId(UUID.randomUUID());
         policy.setName("ReBAC Test Policy");

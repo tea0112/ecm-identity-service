@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,7 +66,7 @@ class KeyAcceptanceTest {
         // Given: User has an active session
         testUser.setStatus(User.UserStatus.ACTIVE);
         testSession.setStatus(UserSession.SessionStatus.ACTIVE);
-        testSession.setExpiresAt(Instant.now().plusMinutes(30));
+        testSession.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         
         when(sessionRepository.findActiveSessionsByUserId(testUser.getId()))
             .thenReturn(List.of(testSession));
@@ -428,7 +429,7 @@ class KeyAcceptanceTest {
         session.setSessionId("test_session_123");
         session.setUser(testUser);
         session.setStatus(UserSession.SessionStatus.ACTIVE);
-        session.setExpiresAt(Instant.now().plusMinutes(30));
+        session.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         return session;
     }
 

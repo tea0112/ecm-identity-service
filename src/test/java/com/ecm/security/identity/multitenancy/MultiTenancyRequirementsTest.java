@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -202,7 +203,7 @@ class MultiTenancyRequirementsTest {
         mergeTracker.setExternalId(mergingTenant.getTenantCode());
         mergeTracker.setMergeOperationId(mergeOperationId);
         mergeTracker.setMergeReversible(true);
-        mergeTracker.setMergeExpiresAt(Instant.now().plusDays(30));
+        mergeTracker.setMergeExpiresAt(Instant.now().plus(30, ChronoUnit.DAYS));
         
         assertTrue(mergeTracker.canReverseMerge());
         assertNotNull(mergeTracker.getMergeOperationId());
@@ -221,7 +222,7 @@ class MultiTenancyRequirementsTest {
         guestRole.setRoleName("GUEST");
         guestRole.setScope("tenant:" + tenant2.getTenantCode() + ":project:shared");
         guestRole.setAssignmentType(UserRole.AssignmentType.TEMPORARY);
-        guestRole.setExpiresAt(Instant.now().plusDays(7)); // 7-day guest access
+        guestRole.setExpiresAt(Instant.now().plus(7, ChronoUnit.DAYS)); // 7-day guest access
         
         // Verify guest access properties
         assertTrue(guestRole.isTemporary());
@@ -295,7 +296,7 @@ class MultiTenancyRequirementsTest {
         sharingRole.setUser(user1);
         sharingRole.setRoleName("EXTERNAL_COLLABORATOR");
         sharingRole.setScope("tenant:" + tenant2.getTenantCode() + ":shared");
-        sharingRole.setExpiresAt(Instant.now().plusDays(30));
+        sharingRole.setExpiresAt(Instant.now().plus(30, ChronoUnit.DAYS));
         sharingRole.setJustification("Cross-tenant collaboration approved by both tenant admins");
         
         assertTrue(sharingRole.isTemporary());

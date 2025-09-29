@@ -75,6 +75,7 @@ public class MultiTenantJpaConfig {
      */
     @Component
     @RequiredArgsConstructor
+    @Slf4j
     public static class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConnectionProvider {
         
         private final DataSource dataSource;
@@ -91,7 +92,7 @@ public class MultiTenantJpaConfig {
         }
         
         @Override
-        public Connection getConnection(String tenantIdentifier) throws SQLException {
+        public Connection getConnection(Object tenantIdentifier) throws SQLException {
             Connection connection = getAnyConnection();
             
             try {
@@ -118,7 +119,7 @@ public class MultiTenantJpaConfig {
         }
         
         @Override
-        public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
+        public void releaseConnection(Object tenantIdentifier, Connection connection) throws SQLException {
             try {
                 // Reset to default schema before releasing
                 connection.createStatement().execute("SET search_path TO " + DEFAULT_SCHEMA);
@@ -147,13 +148,13 @@ public class MultiTenantJpaConfig {
         /**
          * Maps tenant identifier to database schema name.
          */
-        private String getTenantSchema(String tenantIdentifier) {
-            if (tenantIdentifier == null || tenantIdentifier.isEmpty() || "default".equals(tenantIdentifier)) {
+        private String getTenantSchema(Object tenantIdentifier) {
+            if (tenantIdentifier == null || tenantIdentifier.toString().isEmpty() || "default".equals(tenantIdentifier)) {
                 return DEFAULT_SCHEMA;
             }
             
             // Sanitize tenant identifier to create valid schema name
-            return "tenant_" + tenantIdentifier.toLowerCase().replaceAll("[^a-z0-9_]", "_");
+            return "tenant_" + tenantIdentifier.toString().toLowerCase().replaceAll("[^a-z0-9_]", "_");
         }
         
         /**

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * Central authorization service implementing ABAC (Attribute-Based Access Control) 
@@ -77,9 +78,7 @@ public class AuthorizationService {
         
         // Group requests by tenant for optimization
         Map<UUID, List<AuthorizationRequest>> requestsByTenant = requests.stream()
-            .collect(HashMap::new,
-                    (map, req) -> map.computeIfAbsent(req.getTenantId(), k -> new ArrayList<>()).add(req),
-                    (map1, map2) -> { map1.putAll(map2); return map1; });
+            .collect(Collectors.groupingBy(AuthorizationRequest::getTenantId));
         
         List<CompletableFuture<List<AuthorizationDecision>>> futures = new ArrayList<>();
         

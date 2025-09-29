@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.http.MediaType;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -38,17 +39,15 @@ public class SecurityConfig {
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+        // Apply OAuth2 authorization server configuration
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        
-        http.getConfigurer(OAuth2AuthorizationServerConfiguration.class)
-            .oidc(Customizer.withDefaults()); // Enable OpenID Connect 1.0
         
         http
             // Redirect to the login page when not authenticated from the authorization endpoint
             .exceptionHandling(exceptions -> exceptions
                 .defaultAuthenticationEntryPointFor(
                     new LoginUrlAuthenticationEntryPoint("/login"),
-                    new MediaTypeRequestMatcher("text/html")
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                 )
             )
             // Accept access tokens for User Info and/or Client Registration
@@ -177,7 +176,7 @@ public class SecurityConfig {
                 .contentTypeOptions().and()
                 .httpStrictTransportSecurity(hstsConfig -> hstsConfig
                     .maxAgeInSeconds(31536000)
-                    .includeSubdomains(true)
+                    .includeSubDomains(true)
                 )
                 .and()
             )

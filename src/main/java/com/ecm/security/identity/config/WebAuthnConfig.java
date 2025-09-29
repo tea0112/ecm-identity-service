@@ -40,7 +40,6 @@ public class WebAuthnConfig {
                 .identity(rpIdentity)
                 .credentialRepository(credentialRepository())
                 .origins(Set.of(rpOrigin))
-                .allowUnrequestedExtensions(false)
                 .allowUntrustedAttestation(false)
                 .validateSignatureCounter(true)
                 .build();

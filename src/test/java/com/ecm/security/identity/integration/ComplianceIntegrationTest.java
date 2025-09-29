@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -117,9 +118,9 @@ class ComplianceIntegrationTest {
         euUser.setLocale("de_DE");
         euUser.setDateOfBirth(LocalDate.of(1990, 1, 1));
         euUser.setTermsVersion("v2.1");
-        euUser.setTermsAcceptedAt(Instant.now().minusDays(30));
+        euUser.setTermsAcceptedAt(Instant.now().minus(30, ChronoUnit.DAYS));
         euUser.setPrivacyPolicyVersion("v1.5");
-        euUser.setPrivacyPolicyAcceptedAt(Instant.now().minusDays(30));
+        euUser.setPrivacyPolicyAcceptedAt(Instant.now().minus(30, ChronoUnit.DAYS));
         euUser = userRepository.save(euUser);
         
         // Create California user (CCPA jurisdiction)
@@ -131,9 +132,9 @@ class ComplianceIntegrationTest {
         californiaUser.setLocale("en_US");
         californiaUser.setDateOfBirth(LocalDate.of(1985, 5, 15));
         californiaUser.setTermsVersion("v2.1");
-        californiaUser.setTermsAcceptedAt(Instant.now().minusDays(20));
+        californiaUser.setTermsAcceptedAt(Instant.now().minus(20, ChronoUnit.DAYS));
         californiaUser.setPrivacyPolicyVersion("v1.5");
-        californiaUser.setPrivacyPolicyAcceptedAt(Instant.now().minusDays(20));
+        californiaUser.setPrivacyPolicyAcceptedAt(Instant.now().minus(20, ChronoUnit.DAYS));
         californiaUser = userRepository.save(californiaUser);
         
         // Create Singapore user (PDPA jurisdiction)
@@ -145,9 +146,9 @@ class ComplianceIntegrationTest {
         singaporeUser.setLocale("en_SG");
         singaporeUser.setDateOfBirth(LocalDate.of(1988, 8, 8));
         singaporeUser.setTermsVersion("v2.1");
-        singaporeUser.setTermsAcceptedAt(Instant.now().minusDays(10));
+        singaporeUser.setTermsAcceptedAt(Instant.now().minus(10, ChronoUnit.DAYS));
         singaporeUser.setPrivacyPolicyVersion("v1.5");
-        singaporeUser.setPrivacyPolicyAcceptedAt(Instant.now().minusDays(10));
+        singaporeUser.setPrivacyPolicyAcceptedAt(Instant.now().minus(10, ChronoUnit.DAYS));
         singaporeUser = userRepository.save(singaporeUser);
         
         // Get authentication tokens
@@ -534,7 +535,7 @@ class ComplianceIntegrationTest {
             "userId", euUser.getId().toString(),
             "correlationId", correlationId,
             "timeRange", Map.of(
-                "start", Instant.now().minusMinutes(15).toString(),
+                "start", Instant.now().minus(15, ChronoUnit.MINUTES).toString(),
                 "end", Instant.now().toString()
             ),
             "includeContext", true

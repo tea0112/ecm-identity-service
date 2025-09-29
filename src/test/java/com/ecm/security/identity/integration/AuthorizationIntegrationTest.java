@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -367,7 +368,7 @@ class AuthorizationIntegrationTest {
         breakGlassRole.setApprovalRequired(true);
         breakGlassRole.setStatus(UserRole.RoleStatus.PENDING_APPROVAL);
         breakGlassRole.setJustification("Critical system outage - database corruption detected");
-        breakGlassRole.setExpiresAt(Instant.now().plusMinutes(30)); // 30-minute emergency access
+        breakGlassRole.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES)); // 30-minute emergency access
         breakGlassRole = roleRepository.save(breakGlassRole);
         
         // Request break-glass access activation

@@ -100,6 +100,20 @@ public class AuditEvent {
     @Column(name = "risk_factors", updatable = false, columnDefinition = "text[]")
     private String[] riskFactors;
     
+    /**
+     * Add a risk factor to this audit event.
+     */
+    public void addRiskFactor(String riskFactor) {
+        if (this.riskFactors == null) {
+            this.riskFactors = new String[]{riskFactor};
+        } else {
+            String[] newRiskFactors = new String[this.riskFactors.length + 1];
+            System.arraycopy(this.riskFactors, 0, newRiskFactors, 0, this.riskFactors.length);
+            newRiskFactors[this.riskFactors.length] = riskFactor;
+            this.riskFactors = newRiskFactors;
+        }
+    }
+    
     @Column(name = "compliance_flags", updatable = false, columnDefinition = "text[]")
     private String[] complianceFlags;
     

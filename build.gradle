@@ -1,14 +1,25 @@
 plugins {
 	id 'java'
+	id 'org.springframework.boot' version '3.2.5'
+	id 'io.spring.dependency-management' version '1.1.5'
 }
 
 group = 'com.ecm.security'
 version = '0.0.1-SNAPSHOT'
-description = 'Identity and Access Management (IAM) service - Java 25 Minimal Test'
+description = 'Identity and Access Management (IAM) service for the ECM platform'
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
 }
 
 repositories {
@@ -16,21 +27,88 @@ repositories {
 }
 
 dependencies {
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+	// Core Spring Boot Starters
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// OAuth2 and JWT
+	implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
+	implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+	implementation 'org.springframework.security:spring-security-oauth2-client'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
+	// Database
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'com.h2database:h2'
+
+	// Flyway for database migrations
+    implementation("org.flywaydb:flyway-core:11.13.2")
+    implementation("org.flywaydb:flyway-database-postgresql:11.13.2")
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok:1.18.32'
+	annotationProcessor 'org.projectlombok:lombok:1.18.32'
+
+	// Configuration processor
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	// WebAuthn/FIDO2 support
+	implementation 'com.yubico:webauthn-server-core:2.5.1'
+	implementation 'com.yubico:webauthn-server-attestation:2.5.1'
+
+	// Utilities
+	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	implementation 'com.google.guava:guava:33.2.1-jre'
+
+	// Testing
+	testImplementation('org.springframework.boot:spring-boot-starter-test')
+	testImplementation 'org.springframework.security:spring-security-test'
+	
+	// Testcontainers
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
+	
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
-	
-	// Java 25 specific JVM arguments
-	jvmArgs = [
-		'--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-		'--add-opens', 'java.base/java.util=ALL-UNNAMED'
-	]
 }
 
-// Ensure compilation uses Java 25
-tasks.withType(JavaCompile) {
-	options.release = 25
+// Integration test configuration
+configurations {
+	integrationTestImplementation.extendsFrom testImplementation
+	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+sourceSets {
+	integrationTest {
+		java {
+			srcDir 'src/integrationTest/java'
+			compileClasspath += sourceSets.main.output + sourceSets.test.output
+			runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+		}
+		resources {
+			srcDir 'src/integrationTest/resources'
+		}
+	}
+}
+
+tasks.register('integrationTest', Test) {
+	description = 'Run integration tests'
+	group = 'verification'
+	
+	testClassesDirs = sourceSets.integrationTest.output.classesDirs
+	classpath = sourceSets.integrationTest.runtimeClasspath
+	shouldRunAfter test
+	
+	useJUnitPlatform()
 }

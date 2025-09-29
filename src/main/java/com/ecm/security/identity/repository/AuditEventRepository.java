@@ -149,4 +149,14 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
         @Param("startTime") Instant startTime,
         @Param("endTime") Instant endTime,
         Pageable pageable);
+    
+    /**
+     * Simple method to find audit events by user ID (for tests).
+     */
+    List<AuditEvent> findByUserId(UUID userId);
+    
+    /**
+     * Simple method to find audit events by tenant ID (for tests).
+     */
+    List<AuditEvent> findByTenantId(UUID tenantId);
 }

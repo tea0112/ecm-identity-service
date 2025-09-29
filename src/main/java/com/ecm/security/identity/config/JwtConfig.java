@@ -50,7 +50,7 @@ public class JwtConfig {
      */
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-        return NimbusJwtDecoder.withJWKSource(jwkSource).build();
+        return NimbusJwtDecoder.withJwkSetUri("/.well-known/jwks.json").build();
     }
     
     /**
