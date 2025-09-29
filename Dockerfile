@@ -1,25 +1,28 @@
 # Multi-stage Dockerfile for ECM Identity Service
 
 # Build stage
-FROM gradle:8.5-jdk21-alpine AS build
+FROM gradle:8.11.1-jdk21-alpine AS build
 
 WORKDIR /app
 
 # Copy gradle files for dependency caching
 COPY gradle/ gradle/
-COPY gradlew gradle.properties settings.gradle build.gradle ./
+COPY gradlew settings.gradle build.gradle ./
+
+# Copy gradle.properties if it exists
+COPY gradle.properties* ./
 
 # Download dependencies (cached layer)
-RUN ./gradlew dependencies --no-daemon
+RUN ./gradlew dependencies --no-daemon || true
 
 # Copy source code
 COPY src/ src/
 
 # Build the application
-RUN ./gradlew bootJar --no-daemon
+RUN ./gradlew bootJar --no-daemon -x test
 
 # Runtime stage
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*

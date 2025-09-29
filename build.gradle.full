@@ -1,0 +1,268 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.ecm.security'
+version = '0.0.1-SNAPSHOT'
+description = 'Identity and Access Management (IAM) service for the ECM platform.'
+
+java {
+	sourceCompatibility = '21'
+	targetCompatibility = '21'
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		url 'https://repo.spring.io/milestone'
+	}
+	maven {
+		url 'https://build.shibboleth.net/maven/releases/'
+	}
+}
+
+dependencies {
+	// Spring Boot Starters
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.kafka:spring-kafka'
+	
+	// OAuth2 and JWT
+	implementation 'org.springframework.security:spring-security-oauth2-authorization-server:1.3.2'
+	implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+	implementation 'org.springframework.security:spring-security-oauth2-client'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	
+	// SAML Support
+	implementation 'org.springframework.security:spring-security-saml2-service-provider'
+	
+	// WebAuthn/FIDO2
+	implementation 'com.yubico:webauthn-server-core:2.5.2'
+	implementation 'com.yubico:webauthn-server-attestation:2.5.2'
+	
+	// Password Hashing (Argon2)
+	implementation 'org.springframework.security:spring-security-crypto'
+	implementation 'de.mkammerer:argon2-jvm:2.11'
+	
+	// Rate Limiting
+	implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
+	implementation 'com.github.vladimir-bukhtoyarov:bucket4j-redis:7.6.0'
+	
+	// Cryptography and Key Management
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+	implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+	
+	// Policy Engine - We'll implement our own for now
+	// implementation 'com.styra:opa-java-client:1.0.0'
+	
+	// SCIM Protocol - Alternative implementation
+	// SCIM Protocol - Using alternative implementation for now
+	// implementation 'com.unboundid:scim2-sdk-common:3.0.0'
+	// implementation 'com.unboundid:scim2-sdk-server:3.0.0'
+	
+	// TOTP/MFA
+	implementation 'dev.samstevens.totp:totp:1.7.1'
+	
+	// Audit and Logging
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+	implementation 'ch.qos.logback:logback-classic'
+	
+	// Monitoring and Metrics
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+	
+	// Database Migrations
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	
+	// Utilities
+	implementation 'org.apache.commons:commons-lang3:3.17.0'
+	implementation 'com.google.guava:guava:33.3.1-jre'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
+	
+	// Development and Annotations
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	
+	// Database
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'com.h2database:h2'
+	
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.amqp:spring-rabbit-test'
+	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Test configurations
+configurations {
+	integrationTestImplementation.extendsFrom testImplementation
+	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+sourceSets {
+	integrationTest {
+		java {
+			compileClasspath += sourceSets.main.output + sourceSets.test.output
+			runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+			srcDir 'src/test/java'
+		}
+		resources.srcDir 'src/test/resources'
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform {
+		excludeTags 'integration'
+	}
+	finalizedBy jacocoTestReport
+}
+
+task integrationTest(type: Test) {
+	description = 'Runs integration tests with Testcontainers.'
+	group = 'verification'
+	
+	testClassesDirs = sourceSets.integrationTest.output.classesDirs
+	classpath = sourceSets.integrationTest.runtimeClasspath
+	
+	useJUnitPlatform {
+		includeTags 'integration'
+		excludeTags 'unit'
+	}
+	
+	// Integration tests may need more time
+	timeout = Duration.ofMinutes(30)
+	
+	// Ensure containers are properly cleaned up
+	systemProperty 'testcontainers.reuse.enable', 'false'
+}
+
+// Jacoco configuration
+jacoco {
+	toolVersion = "0.8.8"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+	finalizedBy jacocoTestCoverageVerification
+}
+
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.80 // 80% coverage minimum
+			}
+		}
+		rule {
+			element = 'CLASS'
+			excludes = ['*.config.*', '*.dto.*', '*.Application']
+			limit {
+				counter = 'LINE'
+				minimum = 0.75
+			}
+		}
+	}
+}
+
+// Checkstyle configuration
+checkstyle {
+	toolVersion = '10.12.4'
+	configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
+	ignoreFailures = false
+	maxWarnings = 0
+}
+
+// SpotBugs configuration
+spotbugs {
+	ignoreFailures = false
+	effort = 'max'
+	reportLevel = 'medium'
+	excludeFilter = file("${project.rootDir}/config/spotbugs/exclude.xml")
+}
+
+// Flyway configuration
+flyway {
+	url = project.findProperty('flywayUrl') ?: 'jdbc:postgresql://localhost:5432/ecm_identity'
+	user = project.findProperty('flywayUser') ?: 'ecm_user'
+	password = project.findProperty('flywayPassword') ?: 'ecm_password'
+	locations = ['filesystem:src/main/resources/db/migration']
+	baselineOnMigrate = true
+	baselineVersion = '0'
+	validateOnMigrate = true
+}
+
+// Custom tasks
+task createCheckstyleConfig {
+	doLast {
+		mkdir "${project.rootDir}/config/checkstyle"
+		if (!file("${project.rootDir}/config/checkstyle/checkstyle.xml").exists()) {
+			file("${project.rootDir}/config/checkstyle/checkstyle.xml").text = '''<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+    <module name="TreeWalker">
+        <module name="LineLength">
+            <property name="max" value="120"/>
+        </module>
+        <module name="Indentation"/>
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+    </module>
+</module>'''
+		}
+	}
+}
+
+task createSpotBugsConfig {
+	doLast {
+		mkdir "${project.rootDir}/config/spotbugs"
+		if (!file("${project.rootDir}/config/spotbugs/exclude.xml").exists()) {
+			file("${project.rootDir}/config/spotbugs/exclude.xml").text = '''<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude generated classes -->
+    <Match>
+        <Class name="~.*\\..*Application"/>
+    </Match>
+</FindBugsFilter>'''
+		}
+	}
+}
+
+// Ensure config files exist before running checks
+checkstyleMain.dependsOn createCheckstyleConfig
+checkstyleTest.dependsOn createCheckstyleConfig
+spotbugsMain.dependsOn createSpotBugsConfig
+
+// Build dependencies
+build.dependsOn check
+check.dependsOn test, checkstyleMain, checkstyleTest, spotbugsMain
