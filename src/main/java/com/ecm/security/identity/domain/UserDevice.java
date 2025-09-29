@@ -71,68 +71,83 @@ public class UserDevice extends BaseEntity {
     private String ipAddress;
     
     @Column(name = "is_trusted", nullable = false)
+    @Builder.Default
     private Boolean isTrusted = false;
-    
+
     @Column(name = "trust_score")
+    @Builder.Default
     private Double trustScore = 0.0;
-    
+
     @Column(name = "first_seen_at")
     private Instant firstSeenAt;
-    
+
     @Column(name = "last_seen_at")
     private Instant lastSeenAt;
-    
+
     @Column(name = "total_sessions", nullable = false)
+    @Builder.Default
     private Integer totalSessions = 0;
-    
+
     @Column(name = "successful_authentications", nullable = false)
+    @Builder.Default
     private Integer successfulAuthentications = 0;
-    
+
     @Column(name = "failed_authentications", nullable = false)
+    @Builder.Default
     private Integer failedAuthentications = 0;
-    
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private DeviceStatus status = DeviceStatus.UNVERIFIED;
-    
+
     @Column(name = "attestation_supported", nullable = false)
+    @Builder.Default
     private Boolean attestationSupported = false;
-    
+
     @Column(name = "attestation_verified", nullable = false)
+    @Builder.Default
     private Boolean attestationVerified = false;
-    
+
     @Column(name = "attestation_data", columnDefinition = "text")
     private String attestationData;
-    
+
     @Column(name = "tpm_present", nullable = false)
+    @Builder.Default
     private Boolean tpmPresent = false;
-    
+
     @Column(name = "secure_element_present", nullable = false)
+    @Builder.Default
     private Boolean secureElementPresent = false;
-    
+
     @Column(name = "jailbroken_rooted", nullable = false)
+    @Builder.Default
     private Boolean jailbrokenRooted = false;
-    
+
     @Column(name = "emulator_detected", nullable = false)
+    @Builder.Default
     private Boolean emulatorDetected = false;
-    
+
     @Column(name = "vpn_detected", nullable = false)
+    @Builder.Default
     private Boolean vpnDetected = false;
-    
+
     @Column(name = "tor_detected", nullable = false)
+    @Builder.Default
     private Boolean torDetected = false;
-    
+
     @Column(name = "geolocation_country", length = 2)
     private String geolocationCountry;
-    
+
     @Column(name = "geolocation_city", length = 100)
     private String geolocationCity;
-    
+
     @Column(name = "push_token", length = 500)
     private String pushToken;
-    
+
     @Column(name = "push_enabled", nullable = false)
+    @Builder.Default
     private Boolean pushEnabled = false;
     
     @Column(name = "blocked_at")

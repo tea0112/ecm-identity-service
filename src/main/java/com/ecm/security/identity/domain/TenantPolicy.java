@@ -50,11 +50,13 @@ public class TenantPolicy extends BaseEntity {
     
     @NotNull
     @Column(name = "priority", nullable = false)
+    @Builder.Default
     private Integer priority = 1000;
     
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private PolicyStatus status = PolicyStatus.ACTIVE;
     
     @Column(name = "policy_document", columnDefinition = "jsonb")
@@ -88,24 +90,31 @@ public class TenantPolicy extends BaseEntity {
     private String riskLevelMax;
     
     @Column(name = "mfa_required", nullable = false)
+    @Builder.Default
     private Boolean mfaRequired = false;
     
     @Column(name = "step_up_required", nullable = false)
+    @Builder.Default
     private Boolean stepUpRequired = false;
     
     @Column(name = "consent_required", nullable = false)
+    @Builder.Default
     private Boolean consentRequired = false;
     
     @Column(name = "audit_level", length = 20)
+    @Builder.Default
     private String auditLevel = "STANDARD";
     
     @Column(name = "cache_ttl_seconds")
+    @Builder.Default
     private Integer cacheTtlSeconds = 300;
     
     @Column(name = "break_glass_eligible", nullable = false)
+    @Builder.Default
     private Boolean breakGlassEligible = false;
     
     @Column(name = "emergency_override", nullable = false)
+    @Builder.Default
     private Boolean emergencyOverride = false;
     
     @Column(name = "tags", columnDefinition = "text[]")

@@ -52,12 +52,14 @@ public class UserCredential extends BaseEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private CredentialStatus status = CredentialStatus.ACTIVE;
     
     @Column(name = "last_used_at")
     private Instant lastUsedAt;
     
     @Column(name = "usage_count", nullable = false)
+    @Builder.Default
     private Integer usageCount = 0;
     
     @Column(name = "expires_at")
@@ -67,6 +69,7 @@ public class UserCredential extends BaseEntity {
     private String createdByDeviceId;
     
     @Column(name = "backup_eligible", nullable = false)
+    @Builder.Default
     private Boolean backupEligible = false;
     
     @Column(name = "backup_state", length = 50)
@@ -80,6 +83,7 @@ public class UserCredential extends BaseEntity {
     private String webauthnPublicKey;
     
     @Column(name = "webauthn_signature_count")
+    @Builder.Default
     private Long webauthnSignatureCount = 0L;
     
     @Column(name = "webauthn_aaguid", length = 100)
@@ -96,12 +100,15 @@ public class UserCredential extends BaseEntity {
     private String totpSecret;
     
     @Column(name = "totp_algorithm", length = 20)
+    @Builder.Default
     private String totpAlgorithm = "SHA1";
     
     @Column(name = "totp_digits", nullable = false)
+    @Builder.Default
     private Integer totpDigits = 6;
     
     @Column(name = "totp_period", nullable = false)
+    @Builder.Default
     private Integer totpPeriod = 30;
     
     @Column(name = "totp_qr_code_url", length = 1000)
@@ -112,6 +119,7 @@ public class UserCredential extends BaseEntity {
     private String recoveryCodeHash;
     
     @Column(name = "recovery_code_used", nullable = false)
+    @Builder.Default
     private Boolean recoveryCodeUsed = false;
     
     // SMS/Email specific fields
@@ -122,9 +130,11 @@ public class UserCredential extends BaseEntity {
     private String verificationCode;
     
     @Column(name = "verification_attempts", nullable = false)
+    @Builder.Default
     private Integer verificationAttempts = 0;
     
     @Column(name = "max_verification_attempts", nullable = false)
+    @Builder.Default
     private Integer maxVerificationAttempts = 3;
     
     @Column(name = "blocked_until")

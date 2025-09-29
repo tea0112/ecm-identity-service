@@ -49,12 +49,14 @@ public class User extends BaseEntity {
     private String email;
     
     @Column(name = "email_verified", nullable = false)
+    @Builder.Default
     private Boolean emailVerified = false;
     
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
     
     @Column(name = "phone_verified", nullable = false)
+    @Builder.Default
     private Boolean phoneVerified = false;
     
     @Column(name = "password_hash", length = 255)
@@ -64,6 +66,7 @@ public class User extends BaseEntity {
     private String passwordSalt;
     
     @Column(name = "password_algorithm", length = 50)
+    @Builder.Default
     private String passwordAlgorithm = "ARGON2";
     
     @Column(name = "password_changed_at")
@@ -88,23 +91,28 @@ public class User extends BaseEntity {
     private String profilePictureUrl;
     
     @Column(name = "locale", length = 10)
+    @Builder.Default
     private String locale = "en_US";
     
     @Column(name = "timezone", length = 50)
+    @Builder.Default
     private String timezone = "UTC";
     
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private UserStatus status = UserStatus.PENDING_VERIFICATION;
     
     @Column(name = "mfa_enabled", nullable = false)
+    @Builder.Default
     private Boolean mfaEnabled = false;
     
     @Column(name = "mfa_backup_codes", columnDefinition = "text[]")
     private String[] mfaBackupCodes;
     
     @Column(name = "failed_login_attempts", nullable = false)
+    @Builder.Default
     private Integer failedLoginAttempts = 0;
     
     @Column(name = "locked_until")
@@ -132,9 +140,11 @@ public class User extends BaseEntity {
     private String privacyPolicyVersion;
     
     @Column(name = "marketing_consent", nullable = false)
+    @Builder.Default
     private Boolean marketingConsent = false;
     
     @Column(name = "is_minor", nullable = false)
+    @Builder.Default
     private Boolean isMinor = false;
     
     @Column(name = "parental_consent_at")
@@ -147,18 +157,23 @@ public class User extends BaseEntity {
     private String metadata;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<UserSession> sessions = new HashSet<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<UserDevice> devices = new HashSet<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<UserCredential> credentials = new HashSet<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<UserRole> roles = new HashSet<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<LinkedIdentity> linkedIdentities = new HashSet<>();
     
     public enum UserStatus {

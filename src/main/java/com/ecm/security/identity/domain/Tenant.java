@@ -46,6 +46,7 @@ public class Tenant extends BaseEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private TenantStatus status = TenantStatus.ACTIVE;
     
     @Column(name = "subscription_tier", length = 50)
@@ -61,9 +62,11 @@ public class Tenant extends BaseEntity {
     private String cryptoKeyId;
     
     @Column(name = "backup_rpo_minutes")
+    @Builder.Default
     private Integer backupRpoMinutes = 5;
     
     @Column(name = "backup_rto_minutes")
+    @Builder.Default
     private Integer backupRtoMinutes = 60;
     
     @Column(name = "suspended_at")
@@ -73,9 +76,11 @@ public class Tenant extends BaseEntity {
     private String suspensionReason;
     
     @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<User> users = new HashSet<>();
     
     @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<TenantPolicy> policies = new HashSet<>();
     
     public enum TenantStatus {

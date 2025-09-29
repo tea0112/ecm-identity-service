@@ -54,6 +54,7 @@ public class UserSession extends BaseEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private SessionStatus status = SessionStatus.ACTIVE;
     
     @NotNull
@@ -87,12 +88,14 @@ public class UserSession extends BaseEntity {
     private AuthenticationMethod authenticationMethod;
     
     @Column(name = "mfa_completed", nullable = false)
+    @Builder.Default
     private Boolean mfaCompleted = false;
     
     @Column(name = "mfa_methods", columnDefinition = "text[]")
     private String[] mfaMethodsUsed;
     
     @Column(name = "step_up_completed", nullable = false)
+    @Builder.Default
     private Boolean stepUpCompleted = false;
     
     @Column(name = "step_up_required_for", columnDefinition = "text[]")
@@ -101,18 +104,22 @@ public class UserSession extends BaseEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "risk_level", nullable = false)
+    @Builder.Default
     private RiskLevel riskLevel = RiskLevel.LOW;
     
     @Column(name = "risk_score")
+    @Builder.Default
     private Double riskScore = 0.0;
     
     @Column(name = "risk_factors", columnDefinition = "text[]")
     private String[] riskFactors;
     
     @Column(name = "impossible_travel_detected", nullable = false)
+    @Builder.Default
     private Boolean impossibleTravelDetected = false;
     
     @Column(name = "device_fingerprint_changed", nullable = false)
+    @Builder.Default
     private Boolean deviceFingerprintChanged = false;
     
     @Column(name = "terminated_at")
@@ -128,6 +135,7 @@ public class UserSession extends BaseEntity {
     private String[] scopes;
     
     @Column(name = "consent_given", nullable = false)
+    @Builder.Default
     private Boolean consentGiven = false;
     
     @Column(name = "consent_scopes", columnDefinition = "text[]")
@@ -137,6 +145,7 @@ public class UserSession extends BaseEntity {
     private String sessionMetadata;
     
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<SessionActivity> activities = new HashSet<>();
     
     public enum SessionStatus {
