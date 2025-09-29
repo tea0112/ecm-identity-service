@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      - JAVA_HOME=/opt/java/openjdk
+    command: ./gradlew test --no-daemon
+    depends_on:
+      - postgres-test
+      - redis-test
+
+  postgres-test:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ecm_identity_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    tmpfs:
+      - /data
+
+networks:
+  default:
+    name: ecm-test-network

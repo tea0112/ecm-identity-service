@@ -1,0 +1,18 @@
+# Test Dockerfile with Java 21
+FROM gradle:8.11.1-jdk21-alpine
+
+# Install additional tools
+RUN apk add --no-cache curl
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy gradle wrapper and build files
+COPY gradle/ gradle/
+COPY gradlew gradle.properties settings.gradle build.gradle ./
+
+# Download dependencies
+RUN ./gradlew dependencies --no-daemon || true
+
+# Default command
+CMD ["./gradlew", "test", "--no-daemon"]

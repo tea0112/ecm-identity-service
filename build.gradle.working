@@ -1,0 +1,110 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.ecm.security'
+version = '0.0.1-SNAPSHOT'
+description = 'Identity and Access Management (IAM) service for the ECM platform.'
+
+java {
+	sourceCompatibility = '21'
+	targetCompatibility = '21'
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		url 'https://repo.spring.io/milestone'
+	}
+}
+
+dependencies {
+	// Spring Boot Starters
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	
+	// OAuth2 and JWT (using Spring Boot 3.4.0 compatible versions)
+	implementation 'org.springframework.security:spring-security-oauth2-authorization-server:1.4.0'
+	implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+	implementation 'org.springframework.security:spring-security-oauth2-client'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	
+	// SAML 2.0 Support
+	implementation 'org.springframework.security:spring-security-saml2-service-provider'
+	
+	// WebAuthn/FIDO2 Support
+	implementation 'com.yubico:webauthn-server-core:2.5.2'
+	implementation 'com.yubico:webauthn-server-attestation:2.5.2'
+	
+	// Password Hashing (Argon2)
+	implementation 'de.mkammerer:argon2-jvm:2.11'
+	
+	// Rate Limiting
+	implementation 'com.bucket4j:bucket4j-core:8.10.1'
+	implementation 'com.bucket4j:bucket4j-redis:8.10.1'
+	
+	// Cryptography
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+	implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+	
+	// TOTP/MFA
+	implementation 'dev.samstevens.totp:totp:1.7.1'
+	
+	// Audit and Logging
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+	implementation 'ch.qos.logback:logback-classic'
+	
+	// Monitoring
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+	
+	// Database
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'com.h2database:h2'
+	
+	// Flyway for database migrations
+	implementation 'org.flywaydb:flyway-core'
+	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+	
+	// Utilities
+	implementation 'org.apache.commons:commons-lang3:3.17.0'
+	implementation 'com.google.guava:guava:33.3.1-jre'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
+	
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Configuration processor
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.testcontainers:testcontainers'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
