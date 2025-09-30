@@ -5,9 +5,11 @@ import com.ecm.security.identity.repository.TenantRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -20,8 +22,11 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test that only uses Tenant entity to avoid complex relationship issues.
  */
-@DataJpaTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
+                classes = {TestDataJpaConfig.class})
 @Testcontainers
+@ActiveProfiles("integration-test")
+@Transactional
 class TenantOnlyTest {
 
     @Container
@@ -35,6 +40,13 @@ class TenantOnlyTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.show-sql", () -> "false");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.flyway.enabled", () -> "false");
+        registry.add("ecm.audit.enabled", () -> "false");
+        registry.add("ecm.multitenancy.enabled", () -> "false");
     }
 
     @Autowired
@@ -61,6 +73,7 @@ class TenantOnlyTest {
                 .name("Test Tenant")
                 .domain("test.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         Tenant savedTenant = tenantRepository.save(tenant);
@@ -77,6 +90,7 @@ class TenantOnlyTest {
                 .name("Retrieval Test Tenant")
                 .domain("retrieval.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         tenantRepository.save(tenant);
@@ -99,6 +113,7 @@ class TenantOnlyTest {
                 .name("Active Tenant")
                 .domain("active.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         // Create archived tenant
@@ -107,6 +122,7 @@ class TenantOnlyTest {
                 .name("Archived Tenant")
                 .domain("archived.example.com")
                 .status(Tenant.TenantStatus.ARCHIVED)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         tenantRepository.save(activeTenant);
