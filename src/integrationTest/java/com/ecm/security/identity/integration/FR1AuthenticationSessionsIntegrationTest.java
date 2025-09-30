@@ -14,7 +14,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.annotation.Commit;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * Comprehensive integration tests for FR1 - Authentication & Sessions requirements.
  * These tests validate all authentication flows, session management, and security features.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+                classes = {TestWebConfig.class})
 @Testcontainers
-@Transactional
 class FR1AuthenticationSessionsIntegrationTest {
 
     @Container
@@ -45,6 +45,13 @@ class FR1AuthenticationSessionsIntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
+        registry.add("spring.jpa.show-sql", () -> "false");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("ecm.audit.enabled", () -> "false");
+        registry.add("ecm.multitenancy.enabled", () -> "false");
     }
 
     @LocalServerPort
@@ -79,6 +86,7 @@ class FR1AuthenticationSessionsIntegrationTest {
     private User testUser;
 
     @BeforeEach
+    @Commit
     void setUp() {
         baseUrl = "http://localhost:" + port;
         
@@ -88,6 +96,7 @@ class FR1AuthenticationSessionsIntegrationTest {
                 .name("Test Tenant")
                 .domain("test.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         testTenant = tenantRepository.save(testTenant);
 
@@ -98,6 +107,9 @@ class FR1AuthenticationSessionsIntegrationTest {
                 .lastName("User")
                 .tenant(testTenant)
                 .status(User.UserStatus.ACTIVE)
+                .passwordHash("SecurePassword123!") // Using plain password since test uses NoOpPasswordEncoder
+                .emailVerified(true)
+                .mfaEnabled(false)
                 .build();
         testUser = userRepository.save(testUser);
     }

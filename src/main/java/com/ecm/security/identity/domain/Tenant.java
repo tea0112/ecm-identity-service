@@ -3,6 +3,8 @@ package com.ecm.security.identity.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -55,7 +57,8 @@ public class Tenant extends BaseEntity {
     @Column(name = "max_users")
     private Integer maxUsers;
     
-    @Column(name = "settings", columnDefinition = "text")
+    @Column(name = "settings")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String settings;
     
     @Column(name = "crypto_key_id", length = 255)

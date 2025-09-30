@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -242,7 +243,7 @@ class ComplianceRequirementsTest {
         legalHoldEvent.setComplianceFlags(new String[]{});
         
         assertFalse(legalHoldEvent.getLegalHold());
-        assertEquals(0, legalHoldEvent.getComplianceFlags().length);
+        assertArrayEquals(new String[]{}, legalHoldEvent.getComplianceFlags());
         
         // Test selective field exclusion for PII minimization
         AuditEvent minimizedExportEvent = new AuditEvent();
@@ -347,7 +348,7 @@ class ComplianceRequirementsTest {
         dataTransferEvent.setDescription("Cross-border data transfer - adequate protection verified");
         dataTransferEvent.setComplianceFlags(new String[]{"GDPR_Article_44", "adequacy_decision"});
         
-        assertTrue(java.util.Arrays.asList(dataTransferEvent.getComplianceFlags()).contains("GDPR_Article_44"));
+        assertTrue(Arrays.asList(dataTransferEvent.getComplianceFlags()).contains("GDPR_Article_44"));
         assertTrue(dataTransferEvent.getDescription().contains("adequate protection"));
     }
 

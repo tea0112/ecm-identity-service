@@ -2,7 +2,9 @@ package com.ecm.security.identity.service;
 
 import com.ecm.security.identity.domain.AuditEvent;
 import com.ecm.security.identity.domain.TenantPolicy;
+import com.ecm.security.identity.domain.User;
 import com.ecm.security.identity.repository.AuditEventRepository;
+import com.ecm.security.identity.repository.UserRepository;
 import com.ecm.security.identity.service.AuthorizationService.AuthorizationDecision;
 import com.ecm.security.identity.service.AuthorizationService.AuthorizationRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AuditService {
     
     private final AuditEventRepository auditEventRepository;
+    private final UserRepository userRepository;
     private final TenantContextService tenantContextService;
     private final AtomicLong sequenceCounter = new AtomicLong(0);
     
@@ -116,6 +119,13 @@ public class AuditService {
             
             // Add authentication details
             event.setDetails(createAuthenticationDetailsJson(username, success, reason));
+            
+            // Set userId if user exists
+            try {
+                userRepository.findByEmail(username).ifPresent(user -> event.setUserId(user.getId()));
+            } catch (Exception e) {
+                log.debug("Could not find user for audit event: {}", username);
+            }
             
             if (!success) {
                 event.addRiskFactor("failed_authentication");

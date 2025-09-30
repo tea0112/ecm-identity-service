@@ -3,6 +3,8 @@ package com.ecm.security.identity.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -91,10 +93,11 @@ public class AuditEvent {
     @Column(name = "description", updatable = false, length = 1000)
     private String description;
     
-    @Column(name = "details", updatable = false, columnDefinition = "jsonb")
+    @Column(name = "details", updatable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String details;
     
-    @Column(name = "risk_score", updatable = false)
+    @Column(name = "risk_score", updatable = false, columnDefinition = "DECIMAL(5,2)")
     private Double riskScore;
     
     @Column(name = "risk_factors", updatable = false, columnDefinition = "text[]")
@@ -107,10 +110,10 @@ public class AuditEvent {
         if (this.riskFactors == null) {
             this.riskFactors = new String[]{riskFactor};
         } else {
-            String[] newRiskFactors = new String[this.riskFactors.length + 1];
-            System.arraycopy(this.riskFactors, 0, newRiskFactors, 0, this.riskFactors.length);
-            newRiskFactors[this.riskFactors.length] = riskFactor;
-            this.riskFactors = newRiskFactors;
+            String[] newFactors = new String[this.riskFactors.length + 1];
+            System.arraycopy(this.riskFactors, 0, newFactors, 0, this.riskFactors.length);
+            newFactors[this.riskFactors.length] = riskFactor;
+            this.riskFactors = newFactors;
         }
     }
     

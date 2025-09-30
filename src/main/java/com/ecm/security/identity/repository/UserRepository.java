@@ -22,6 +22,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Finds a user by email within a tenant.
      */
     Optional<User> findByTenantAndEmailAndDeletedAtIsNull(Tenant tenant, String email);
+    
+    /**
+     * Finds a user by email (for integration tests and simple lookups).
+     */
+    Optional<User> findByEmail(String email);
 
     /**
      * Finds a user by email and tenant (for integration tests).

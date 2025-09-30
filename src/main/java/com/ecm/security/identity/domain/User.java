@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -108,8 +110,8 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean mfaEnabled = false;
     
-    @Column(name = "mfa_backup_codes", columnDefinition = "text")
-    private String mfaBackupCodes;
+    @Column(name = "mfa_backup_codes", columnDefinition = "text[]")
+    private String[] mfaBackupCodes;
     
     @Column(name = "failed_login_attempts", nullable = false)
     @Builder.Default
@@ -153,7 +155,8 @@ public class User extends BaseEntity {
     @Column(name = "parent_email", length = 255)
     private String parentEmail;
     
-    @Column(name = "metadata", columnDefinition = "text")
+    @Column(name = "metadata")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String metadata;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
