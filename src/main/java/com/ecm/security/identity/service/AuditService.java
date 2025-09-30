@@ -173,6 +173,10 @@ public class AuditService {
     }
     
     public void logSecurityIncident(String incidentType, String description, String severity, Object details, String[] riskFactors, double riskScore) {
+        logSecurityIncident(incidentType, description, severity, details, riskFactors, riskScore, null);
+    }
+    
+    public void logSecurityIncident(String incidentType, String description, String severity, Object details, String[] riskFactors, double riskScore, String[] complianceFlags) {
         try {
             AuditEvent event = createBaseEvent(incidentType);
             event.setSeverity(AuditEvent.Severity.valueOf(severity.toUpperCase()));
@@ -204,6 +208,11 @@ public class AuditService {
                 }
             }
             event.setRiskScore(riskScore);
+            
+            // Set compliance flags
+            if (complianceFlags != null) {
+                event.setComplianceFlags(complianceFlags);
+            }
             
             saveAuditEvent(event);
             

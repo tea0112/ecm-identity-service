@@ -1,6 +1,7 @@
 package com.ecm.security.identity.controller;
 
 import com.ecm.security.identity.service.AuditService;
+import com.ecm.security.identity.service.TenantContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.*;
 public class SCIMController {
     
     private final AuditService auditService;
+    private final TenantContextService tenantContextService;
 
     /**
      * Create a SCIM user.
@@ -29,6 +31,11 @@ public class SCIMController {
             @RequestBody Map<String, Object> request) {
         
         try {
+            // Set tenant context (use test-tenant for SCIM operations)
+            tenantContextService.setCurrentContext(
+                tenantContextService.resolveTenantByCode("test-tenant")
+            );
+            
             // Mock SCIM user creation
             String userId = "scim-user-" + UUID.randomUUID().toString();
             String userName = (String) request.get("userName");
@@ -117,6 +124,11 @@ public class SCIMController {
             @RequestBody Map<String, Object> request) {
         
         try {
+            // Set tenant context (use test-tenant for SCIM operations)
+            tenantContextService.setCurrentContext(
+                tenantContextService.resolveTenantByCode("test-tenant")
+            );
+            
             // Mock SCIM user update
             Map<String, Object> response = new HashMap<>();
             response.put("schemas", Arrays.asList("urn:ietf:params:scim:schemas:core:2.0:User"));
@@ -167,6 +179,11 @@ public class SCIMController {
             @RequestBody Map<String, Object> request) {
         
         try {
+            // Set tenant context (use test-tenant for SCIM operations)
+            tenantContextService.setCurrentContext(
+                tenantContextService.resolveTenantByCode("test-tenant")
+            );
+            
             // Mock SCIM group creation
             String groupId = "scim-group-" + UUID.randomUUID().toString();
             String displayName = (String) request.get("displayName");

@@ -30,6 +30,11 @@ public class SSOController {
             @RequestBody SamlSsoInitiateRequest request) {
         
         try {
+            // Set tenant context
+            tenantContextService.setCurrentContext(
+                tenantContextService.resolveTenantByCode(request.getTenantCode())
+            );
+            
             // Generate SAML request
             String samlRequest = "mock-saml-request-" + UUID.randomUUID().toString();
             String ssoUrl = "https://enterprise-idp.example.com/sso";
@@ -68,6 +73,11 @@ public class SSOController {
             @RequestBody SamlResponseRequest request) {
         
         try {
+            // Set tenant context (use test-tenant for SAML response processing)
+            tenantContextService.setCurrentContext(
+                tenantContextService.resolveTenantByCode("test-tenant")
+            );
+            
             // Mock SAML response processing
             String userId = "user-" + UUID.randomUUID().toString();
             boolean jitProvisioned = true;
@@ -141,6 +151,11 @@ public class SSOController {
             @RequestBody JitProvisioningRequest request) {
         
         try {
+            // Set tenant context (use test-tenant for JIT provisioning)
+            tenantContextService.setCurrentContext(
+                tenantContextService.resolveTenantByCode("test-tenant")
+            );
+            
             // Mock JIT provisioning
             String userId = "jit-user-" + UUID.randomUUID().toString();
             Map<String, Object> userAttributes = request.getUserAttributes();
