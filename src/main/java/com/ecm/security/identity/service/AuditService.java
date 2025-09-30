@@ -172,6 +172,19 @@ public class AuditService {
             event.setResource("security");
             event.setAction("incident_detection");
             
+            // Extract userId from details if available
+            if (details instanceof Map) {
+                Map<String, Object> detailsMap = (Map<String, Object>) details;
+                Object userIdObj = detailsMap.get("userId");
+                if (userIdObj != null) {
+                    try {
+                        event.setUserId(UUID.fromString(userIdObj.toString()));
+                    } catch (IllegalArgumentException e) {
+                        log.debug("Invalid userId format in security incident: {}", userIdObj);
+                    }
+                }
+            }
+            
             // Add incident details
             event.setDetails(createIncidentDetailsJson(incidentType, details));
             

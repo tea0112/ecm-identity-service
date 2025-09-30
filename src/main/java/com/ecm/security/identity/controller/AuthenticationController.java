@@ -853,6 +853,7 @@ public class AuthenticationController {
             
             Map<String, Object> incidentDetails = new HashMap<>();
             incidentDetails.put("sessionId", request.getSessionId());
+            incidentDetails.put("userId", session.getUser().getId().toString());
             if (request.getNewIpAddress() != null) {
                 incidentDetails.put("newIpAddress", request.getNewIpAddress());
             }
@@ -968,6 +969,7 @@ public class AuthenticationController {
                 try {
                     Map<String, Object> incidentDetails = new HashMap<>();
                     incidentDetails.put("sessionId", request.getSessionId());
+                    incidentDetails.put("userId", session.getUser().getId().toString());
                     incidentDetails.put("anomalyScore", anomalyScore);
                     incidentDetails.put("anomalyDetected", anomalyDetected);
                     
@@ -1025,8 +1027,11 @@ public class AuthenticationController {
                 leakDetected ? "CRITICAL" : "INFO",
                 Map.of(
                     "email", request.getEmail(),
+                    "userId", userOpt.get().getId().toString(),
                     "leakSource", leakDetected ? "dark_web_monitoring" : "none"
-                ));
+                ),
+                leakDetected ? new String[]{"credential_leak"} : new String[]{"no_leak"},
+                leakDetected ? 95.0 : 25.0);
             
             return ResponseEntity.ok(response);
             
