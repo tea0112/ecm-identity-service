@@ -8,8 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -21,11 +22,14 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Simple database connectivity test using @DataJpaTest with Testcontainers.
+ * Simple database connectivity test using @SpringBootTest with Testcontainers.
  * This test focuses only on basic JPA operations and database connectivity.
  */
-@DataJpaTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
+                classes = {TestDataJpaConfig.class})
 @Testcontainers
+@ActiveProfiles("integration-test")
+@Transactional
 class SimpleDatabaseTest {
 
     @Container
@@ -51,9 +55,6 @@ class SimpleDatabaseTest {
     @Autowired
     private TenantRepository tenantRepository;
 
-    @Autowired
-    private TestEntityManager entityManager;
-
     private Tenant testTenant;
 
     @BeforeEach
@@ -64,10 +65,9 @@ class SimpleDatabaseTest {
                 .name("Test Tenant")
                 .domain("test.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         testTenant = tenantRepository.save(testTenant);
-        entityManager.flush();
-        entityManager.clear();
     }
 
     @Test
@@ -89,11 +89,10 @@ class SimpleDatabaseTest {
                 .lastName("User")
                 .tenant(testTenant)
                 .status(User.UserStatus.ACTIVE)
+                .metadata("{}") // Valid JSON for jsonb column
                 .build();
         
         User savedUser = userRepository.save(testUser);
-        entityManager.flush();
-        entityManager.clear();
         
         assertNotNull(savedUser.getId());
         
@@ -133,11 +132,10 @@ class SimpleDatabaseTest {
                 .lastName("User2")
                 .tenant(testTenant)
                 .status(User.UserStatus.ACTIVE)
+                .metadata("{}") // Valid JSON for jsonb column
                 .build();
         
         userRepository.save(testUser);
-        entityManager.flush();
-        entityManager.clear();
         
         // Verify user was saved
         Optional<User> foundUser = userRepository.findByEmailAndTenant("test2@example.com", testTenant);
