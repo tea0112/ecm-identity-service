@@ -8,8 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -21,11 +22,14 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Fixed database connectivity test using @DataJpaTest with Testcontainers.
+ * Fixed database connectivity test using @SpringBootTest with Testcontainers.
  * This test focuses on basic database connectivity and entity operations.
  */
-@DataJpaTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
+                classes = {TestDataJpaConfig.class})
 @Testcontainers
+@ActiveProfiles("integration-test")
+@Transactional
 class FixedDatabaseTest {
 
     @Container
@@ -51,16 +55,12 @@ class FixedDatabaseTest {
     @Autowired
     private TenantRepository tenantRepository;
 
-    @Autowired
-    private TestEntityManager entityManager;
-
     @Test
     @DisplayName("Database connectivity works with Testcontainers")
     void testDatabaseConnectivity() {
         // Test that repositories are available
         assertNotNull(userRepository);
         assertNotNull(tenantRepository);
-        assertNotNull(entityManager);
     }
 
     @Test
@@ -72,11 +72,10 @@ class FixedDatabaseTest {
         tenant.setName("Test Tenant");
         tenant.setDomain("test.example.com");
         tenant.setStatus(Tenant.TenantStatus.ACTIVE);
+        tenant.setSettings("{}"); // Valid JSON for jsonb column
         
         // Save the tenant
         Tenant savedTenant = tenantRepository.save(tenant);
-        entityManager.flush();
-        entityManager.clear();
         
         // Verify the tenant was saved
         assertNotNull(savedTenant.getId());
@@ -98,10 +97,9 @@ class FixedDatabaseTest {
         tenant.setName("Test Tenant");
         tenant.setDomain("test.example.com");
         tenant.setStatus(Tenant.TenantStatus.ACTIVE);
+        tenant.setSettings("{}"); // Valid JSON for jsonb column
         
         Tenant savedTenant = tenantRepository.save(tenant);
-        entityManager.flush();
-        entityManager.clear();
         
         // Create a simple user
         User user = new User();
@@ -110,11 +108,10 @@ class FixedDatabaseTest {
         user.setLastName("User");
         user.setTenant(savedTenant);
         user.setStatus(User.UserStatus.ACTIVE);
+        user.setMetadata("{}"); // Valid JSON for jsonb column
         
         // Save the user
         User savedUser = userRepository.save(user);
-        entityManager.flush();
-        entityManager.clear();
         
         // Verify the user was saved
         assertNotNull(savedUser.getId());
@@ -137,10 +134,9 @@ class FixedDatabaseTest {
         tenant.setName("Test Tenant");
         tenant.setDomain("test.example.com");
         tenant.setStatus(Tenant.TenantStatus.ACTIVE);
+        tenant.setSettings("{}"); // Valid JSON for jsonb column
         
         Tenant savedTenant = tenantRepository.save(tenant);
-        entityManager.flush();
-        entityManager.clear();
         
         // Test tenant repository methods
         assertTrue(tenantRepository.existsByTenantCodeAndDeletedAtIsNull("test-tenant"));
