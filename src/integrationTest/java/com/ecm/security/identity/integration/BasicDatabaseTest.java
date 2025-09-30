@@ -3,8 +3,7 @@ package com.ecm.security.identity.integration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -19,10 +18,11 @@ import java.sql.Statement;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Basic database connectivity test using @DataJpaTest with Testcontainers.
+ * Basic database connectivity test using @SpringBootTest with Testcontainers.
  * This test focuses on basic database connectivity without complex entity relationships.
  */
-@DataJpaTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, 
+                classes = {TestDataJpaConfig.class})
 @Testcontainers
 class BasicDatabaseTest {
 
@@ -45,9 +45,6 @@ class BasicDatabaseTest {
 
     @Autowired
     private DataSource dataSource;
-
-    @Autowired
-    private TestEntityManager entityManager;
 
     @Test
     @DisplayName("Database connectivity works with Testcontainers")
