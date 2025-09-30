@@ -109,9 +109,18 @@ public class AuditService {
     @Async
     @Transactional
     public void logAuthenticationEvent(String eventType, String username, boolean success, String reason) {
+        logAuthenticationEvent(eventType, username, success, reason, null);
+    }
+    
+    /**
+     * Logs a user authentication event with tenant context.
+     */
+    @Async
+    @Transactional
+    public void logAuthenticationEvent(String eventType, String username, boolean success, String reason, UUID tenantId) {
         log.debug("logAuthenticationEvent called with eventType: {}, username: {}, success: {}", eventType, username, success);
         try {
-            AuditEvent event = createBaseEvent(eventType);
+            AuditEvent event = createBaseEvent(eventType, tenantId);
             event.setActorType("USER");
             event.setResource("authentication");
             event.setAction("authenticate");
@@ -280,6 +289,13 @@ public class AuditService {
      * Creates a base audit event with common fields populated.
      */
     private AuditEvent createBaseEvent(String eventType) {
+        return createBaseEvent(eventType, null);
+    }
+    
+    /**
+     * Creates a base audit event with common fields populated and tenant context.
+     */
+    private AuditEvent createBaseEvent(String eventType, UUID tenantId) {
         AuditEvent event = new AuditEvent();
         event.setTimestamp(Instant.now());
         event.setEventType(eventType);
@@ -288,13 +304,17 @@ public class AuditService {
         event.setApplicationVersion(getApplicationVersion());
         
         // Set tenant context
-        try {
-            TenantContextService.TenantContext context = tenantContextService.getCurrentContext();
-            if (context != null) {
-                event.setTenantId(context.getTenantId());
+        if (tenantId != null) {
+            event.setTenantId(tenantId);
+        } else {
+            try {
+                TenantContextService.TenantContext context = tenantContextService.getCurrentContext();
+                if (context != null) {
+                    event.setTenantId(context.getTenantId());
+                }
+            } catch (Exception e) {
+                log.debug("Could not determine tenant context for audit event");
             }
-        } catch (Exception e) {
-            log.debug("Could not determine tenant context for audit event");
         }
         
         // Set request context

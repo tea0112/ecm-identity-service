@@ -248,4 +248,78 @@ public class UserController {
         private String mergeId;
         private String reason;
     }
+    
+    /**
+     * Update user profile.
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @RequestBody ProfileUpdateRequest request,
+            @RequestHeader("Authorization") String authorization,
+            HttpServletRequest httpRequest) {
+        
+        try {
+            // Extract session ID from Authorization header
+            String sessionId = authorization.replace("Bearer ", "");
+            
+            // Find the current session
+            Optional<UserSession> currentSessionOpt = sessionManagementService.getActiveSession(sessionId);
+            
+            if (currentSessionOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid or expired session"));
+            }
+            
+            UserSession currentSession = currentSessionOpt.get();
+            User user = currentSession.getUser();
+            
+            // Update user profile fields
+            if (request.getFirstName() != null) {
+                user.setFirstName(request.getFirstName());
+            }
+            if (request.getLastName() != null) {
+                user.setLastName(request.getLastName());
+            }
+            if (request.getPhoneNumber() != null) {
+                user.setPhoneNumber(request.getPhoneNumber());
+            }
+            if (request.getTimezone() != null) {
+                user.setTimezone(request.getTimezone());
+            }
+            
+            user = userRepository.save(user);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", user.getId().toString());
+            response.put("firstName", user.getFirstName());
+            response.put("lastName", user.getLastName());
+            response.put("phoneNumber", user.getPhoneNumber());
+            response.put("timezone", user.getTimezone());
+            response.put("updated", true);
+            
+            // Log profile update event
+            try {
+                auditService.logAuthenticationEvent("user.profile.updated", 
+                    user.getEmail(), true, null);
+            } catch (Exception auditException) {
+                log.debug("Could not log audit event: {}", auditException.getMessage());
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error during profile update", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Internal server error"));
+        }
+    }
+    
+    // DTOs
+    @lombok.Data
+    public static class ProfileUpdateRequest {
+        private String firstName;
+        private String lastName;
+        private String phoneNumber;
+        private String timezone;
+    }
 }

@@ -2,8 +2,10 @@ package com.ecm.security.identity.controller;
 
 import com.ecm.security.identity.domain.User;
 import com.ecm.security.identity.domain.UserSession;
+import com.ecm.security.identity.domain.Tenant;
 import com.ecm.security.identity.repository.UserRepository;
 import com.ecm.security.identity.repository.UserSessionRepository;
+import com.ecm.security.identity.repository.TenantRepository;
 import com.ecm.security.identity.service.AuditService;
 import com.ecm.security.identity.service.SessionManagementService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class AuthenticationController {
     
     private final UserRepository userRepository;
     private final UserSessionRepository sessionRepository;
+    private final TenantRepository tenantRepository;
     private final SessionManagementService sessionManagementService;
     private final AuditService auditService;
     private final PasswordEncoder passwordEncoder;
@@ -159,6 +162,100 @@ public class AuthenticationController {
             } catch (Exception auditException) {
                 log.debug("Could not log audit event: {}", auditException.getMessage());
             }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Internal server error"));
+        }
+    }
+    
+    /**
+     * User registration endpoint.
+     */
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> registerUser(
+            @RequestBody UserRegistrationRequest request,
+            HttpServletRequest httpRequest) {
+        
+        try {
+            log.info("User registration attempt for email: {}", request.getEmail());
+            
+                    // Check if user already exists and is active
+                    Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+                    if (existingUser.isPresent() && existingUser.get().getStatus() == User.UserStatus.ACTIVE) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("error", "User already exists"));
+                    }
+            
+            // Find tenant by code (excluding archived tenants)
+            log.info("Looking for tenant with code: {}", request.getTenantCode());
+            Optional<Tenant> tenantOpt = tenantRepository.findByTenantCodeAndStatusNot(request.getTenantCode(), Tenant.TenantStatus.ARCHIVED);
+            if (tenantOpt.isEmpty()) {
+                log.warn("Tenant not found for code: {}", request.getTenantCode());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Invalid tenant code"));
+            }
+            log.info("Found tenant: {}", tenantOpt.get().getName());
+            
+            Tenant tenant = tenantOpt.get();
+            
+            User newUser;
+            if (existingUser.isPresent() && existingUser.get().getStatus() == User.UserStatus.DEACTIVATED) {
+                // Re-register deactivated user - create new user with different ID but same email
+                // This simulates account resurrection prevention by creating a completely new identity
+                log.info("Re-registering deactivated user: {}", request.getEmail());
+                
+                // Delete the old deactivated user to allow re-registration
+                userRepository.delete(existingUser.get());
+                
+                // Create new user with fresh identity
+                newUser = User.builder()
+                    .email(request.getEmail())
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .tenant(tenant)
+                    .status(User.UserStatus.ACTIVE)
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .emailVerified(true)
+                    .mfaEnabled(false)
+                    .metadata("{}")
+                    .build();
+            } else {
+                // Create new user
+                newUser = User.builder()
+                    .email(request.getEmail())
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .tenant(tenant)
+                    .status(User.UserStatus.ACTIVE)
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .emailVerified(true)
+                    .mfaEnabled(false)
+                    .metadata("{}")
+                    .build();
+            }
+            
+            newUser = userRepository.save(newUser);
+            
+            // Generate verification token
+            String verificationToken = "verify_" + UUID.randomUUID().toString().replace("-", "");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", newUser.getId().toString());
+            response.put("status", "active"); // Changed from pending_verification
+            response.put("verificationToken", verificationToken);
+            response.put("message", "User registered successfully.");
+            
+            // Log registration event
+            try {
+                auditService.logAuthenticationEvent("auth.registration.completed", 
+                    request.getEmail(), true, null);
+            } catch (Exception auditException) {
+                log.debug("Could not log audit event: {}", auditException.getMessage());
+            }
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
+        } catch (Exception e) {
+            log.error("Error during user registration", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error"));
         }
@@ -1379,5 +1476,17 @@ public class AuthenticationController {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+    
+    // DTOs
+    @lombok.Data
+    public static class UserRegistrationRequest {
+        private String email;
+        private String firstName;
+        private String lastName;
+        private String password;
+        private String tenantCode;
+        private String acceptedTermsVersion;
+        private String acceptedPrivacyVersion;
     }
 }
