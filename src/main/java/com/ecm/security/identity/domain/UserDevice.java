@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -156,7 +158,8 @@ public class UserDevice extends BaseEntity {
     @Column(name = "blocked_reason", length = 500)
     private String blockedReason;
     
-    @Column(name = "device_metadata", columnDefinition = "jsonb")
+    @Column(name = "device_metadata")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String deviceMetadata;
     
     public enum DeviceStatus {

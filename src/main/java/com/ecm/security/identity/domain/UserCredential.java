@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -140,7 +142,8 @@ public class UserCredential extends BaseEntity {
     @Column(name = "blocked_until")
     private Instant blockedUntil;
     
-    @Column(name = "metadata", columnDefinition = "jsonb")
+    @Column(name = "metadata")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String metadata;
     
     public enum CredentialType {

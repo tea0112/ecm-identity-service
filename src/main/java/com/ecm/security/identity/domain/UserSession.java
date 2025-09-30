@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -91,7 +93,7 @@ public class UserSession extends BaseEntity {
     @Builder.Default
     private Boolean mfaCompleted = false;
     
-    @Column(name = "mfa_methods", columnDefinition = "text[]")
+    @Column(name = "mfa_methods_used", columnDefinition = "text[]")
     private String[] mfaMethodsUsed;
     
     @Column(name = "step_up_completed", nullable = false)
@@ -141,7 +143,8 @@ public class UserSession extends BaseEntity {
     @Column(name = "consent_scopes", columnDefinition = "text[]")
     private String[] consentScopes;
     
-    @Column(name = "session_metadata", columnDefinition = "jsonb")
+    @Column(name = "session_metadata")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String sessionMetadata;
     
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

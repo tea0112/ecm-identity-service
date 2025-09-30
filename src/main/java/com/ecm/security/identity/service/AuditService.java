@@ -19,6 +19,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.Map;
+import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,6 +37,7 @@ public class AuditService {
     private final AuditEventRepository auditEventRepository;
     private final UserRepository userRepository;
     private final TenantContextService tenantContextService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final AtomicLong sequenceCounter = new AtomicLong(0);
     
     /**
@@ -104,6 +109,7 @@ public class AuditService {
     @Async
     @Transactional
     public void logAuthenticationEvent(String eventType, String username, boolean success, String reason) {
+        log.debug("logAuthenticationEvent called with eventType: {}, username: {}, success: {}", eventType, username, success);
         try {
             AuditEvent event = createBaseEvent(eventType);
             event.setActorType("USER");
@@ -122,9 +128,18 @@ public class AuditService {
             
             // Set userId if user exists
             try {
-                userRepository.findByEmail(username).ifPresent(user -> event.setUserId(user.getId()));
+                Optional<User> userOpt = userRepository.findByEmail(username);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    event.setUserId(user.getId());
+                    log.debug("Set userId {} for audit event with username: {}", user.getId(), username);
+                } else {
+                    log.debug("User not found for audit event: {}", username);
+                    // In production, we might want to create a system user record for audit events
+                    // For now, we'll leave userId as null for unknown users
+                }
             } catch (Exception e) {
-                log.debug("Could not find user for audit event: {}", username);
+                log.debug("Exception during user lookup for audit event: {}", username, e);
             }
             
             if (!success) {
@@ -145,8 +160,12 @@ public class AuditService {
     @Async
     @Transactional
     public void logSecurityIncident(String incidentType, String description, String severity, Object details) {
+        logSecurityIncident(incidentType, description, severity, details, new String[]{"security_incident"}, 90.0);
+    }
+    
+    public void logSecurityIncident(String incidentType, String description, String severity, Object details, String[] riskFactors, double riskScore) {
         try {
-            AuditEvent event = createBaseEvent(AuditEvent.EventTypes.SUSPICIOUS_ACTIVITY);
+            AuditEvent event = createBaseEvent(incidentType);
             event.setSeverity(AuditEvent.Severity.valueOf(severity.toUpperCase()));
             event.setDescription(description);
             event.setOutcome("DETECTED");
@@ -156,9 +175,13 @@ public class AuditService {
             // Add incident details
             event.setDetails(createIncidentDetailsJson(incidentType, details));
             
-            // Mark as high-risk security event
-            event.addRiskFactor("security_incident");
-            event.setRiskScore(90.0);
+            // Set risk factors and score
+            if (riskFactors != null) {
+                for (String riskFactor : riskFactors) {
+                    event.addRiskFactor(riskFactor);
+                }
+            }
+            event.setRiskScore(riskScore);
             
             saveAuditEvent(event);
             
@@ -179,6 +202,15 @@ public class AuditService {
             event.setActorType("USER");
             event.setResource("session");
             event.setOutcome("SUCCESS");
+            
+            // Set userId if provided
+            if (userId != null) {
+                try {
+                    event.setUserId(UUID.fromString(userId));
+                } catch (IllegalArgumentException e) {
+                    log.debug("Invalid userId format: {}", userId);
+                }
+            }
             
             event.setDescription(String.format("Session %s%s",
                 eventType.toLowerCase().replace("_", " "),
@@ -443,15 +475,38 @@ public class AuditService {
     }
     
     private String createIncidentDetailsJson(String incidentType, Object details) {
-        return String.format("""
-            {
-                "incidentType": "%s",
-                "details": %s,
-                "detectedAt": "%s"
-            }""",
-            incidentType,
-            details != null ? details.toString() : "{}",
-            Instant.now().toString());
+        try {
+            String detailsJson = "{}";
+            if (details != null) {
+                if (details instanceof Map) {
+                    // Convert Map to proper JSON string
+                    detailsJson = objectMapper.writeValueAsString(details);
+                } else {
+                    detailsJson = details.toString();
+                }
+            }
+            
+            return String.format("""
+                {
+                    "incidentType": "%s",
+                    "details": %s,
+                    "detectedAt": "%s"
+                }""",
+                incidentType,
+                detailsJson,
+                Instant.now().toString());
+        } catch (Exception e) {
+            log.warn("Failed to serialize incident details, using fallback", e);
+            return String.format("""
+                {
+                    "incidentType": "%s",
+                    "details": {},
+                    "detectedAt": "%s",
+                    "error": "Failed to serialize details"
+                }""",
+                incidentType,
+                Instant.now().toString());
+        }
     }
     
     private String createSessionDetailsJson(String sessionId, String userId, String reason) {

@@ -422,7 +422,7 @@ public class SessionManagementService {
         auditService.logSecurityIncident(
             AuditEvent.EventTypes.SESSION_HIJACK_DETECTED,
             "Session invalidated due to security concerns: " + reason,
-            "HIGH",
+            "CRITICAL",
             Map.of(
                 "sessionId", session.getSessionId(),
                 "userId", session.getUser().getId().toString(),

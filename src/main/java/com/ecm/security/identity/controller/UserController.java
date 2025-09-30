@@ -28,65 +28,6 @@ public class UserController {
     private final SessionManagementService sessionManagementService;
     private final AuditService auditService;
     
-    /**
-     * Get active sessions for a user.
-     */
-    @GetMapping("/sessions")
-    public ResponseEntity<Map<String, Object>> getUserSessions(
-            @RequestParam String sessionId,
-            HttpServletRequest httpRequest) {
-        
-        try {
-            log.info("Get user sessions request for session: {}", sessionId);
-            
-            // Validate session
-            Optional<UserSession> sessionOpt = sessionManagementService.getActiveSession(sessionId);
-            if (sessionOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid session"));
-            }
-            
-            UserSession currentSession = sessionOpt.get();
-            User user = currentSession.getUser();
-            
-            // Get all active sessions for the user
-            List<UserSession> activeSessions = sessionManagementService.getUserActiveSessions(user.getId());
-            
-            // Convert sessions to response format
-            List<Map<String, Object>> sessions = new ArrayList<>();
-            for (UserSession session : activeSessions) {
-                Map<String, Object> sessionInfo = new HashMap<>();
-                sessionInfo.put("sessionId", session.getSessionId());
-                sessionInfo.put("createdAt", session.getCreatedAt());
-                sessionInfo.put("lastActivityAt", session.getLastActivityAt());
-                sessionInfo.put("expiresAt", session.getExpiresAt());
-                sessionInfo.put("ipAddress", session.getIpAddress());
-                sessionInfo.put("userAgent", session.getUserAgent());
-                sessionInfo.put("locationCountry", session.getLocationCountry());
-                sessionInfo.put("locationCity", session.getLocationCity());
-                sessionInfo.put("deviceName", session.getDevice() != null ? session.getDevice().getDeviceName() : "Unknown");
-                sessionInfo.put("isCurrent", session.getSessionId().equals(sessionId));
-                sessionInfo.put("riskLevel", session.getRiskLevel().toString());
-                sessionInfo.put("status", session.getStatus().toString());
-                
-                sessions.add(sessionInfo);
-            }
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("sessions", sessions);
-            response.put("totalSessions", sessions.size());
-            
-            auditService.logSessionEvent("SESSIONS_LISTED", sessionId, user.getId().toString(), null);
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            log.error("Error getting user sessions", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Internal server error"));
-        }
-    }
     
     /**
      * Revoke a specific session.
