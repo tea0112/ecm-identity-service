@@ -8,30 +8,49 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Simple working database connectivity test using @DataJpaTest with H2.
+ * Simple working database connectivity test using @SpringBootTest with PostgreSQL Testcontainers.
  * This test focuses on basic database connectivity and entity operations.
  */
-@DataJpaTest
-@TestPropertySource(properties = {
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.show-sql=false",
-    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-    "spring.flyway.enabled=false"
-})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
+                classes = {TestDataJpaConfig.class})
+@Testcontainers
+@ActiveProfiles("integration-test")
+@Transactional
 class SimpleWorkingTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
+            .withDatabaseName("ecm_identity_test")
+            .withUsername("test")
+            .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.show-sql", () -> "false");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.flyway.enabled", () -> "false");
+        registry.add("ecm.audit.enabled", () -> "false");
+        registry.add("ecm.multitenancy.enabled", () -> "false");
+    }
 
     @Autowired
     private UserRepository userRepository;
@@ -39,16 +58,12 @@ class SimpleWorkingTest {
     @Autowired
     private TenantRepository tenantRepository;
 
-    @Autowired
-    private TestEntityManager entityManager;
-
     @Test
     @DisplayName("Database connectivity works")
     void testDatabaseConnectivity() {
         // Test that repositories are available
         assertNotNull(userRepository);
         assertNotNull(tenantRepository);
-        assertNotNull(entityManager);
     }
 
     @Test
@@ -60,12 +75,11 @@ class SimpleWorkingTest {
                 .name("Test Tenant")
                 .domain("test.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         // Save the tenant
         Tenant savedTenant = tenantRepository.save(tenant);
-        entityManager.flush();
-        entityManager.clear();
         
         // Verify the tenant was saved
         assertNotNull(savedTenant.getId());
@@ -87,11 +101,10 @@ class SimpleWorkingTest {
                 .name("Test Tenant")
                 .domain("test.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         Tenant savedTenant = tenantRepository.save(tenant);
-        entityManager.flush();
-        entityManager.clear();
         
         // Create a simple user
         User user = User.builder()
@@ -100,12 +113,11 @@ class SimpleWorkingTest {
                 .lastName("User")
                 .tenant(savedTenant)
                 .status(User.UserStatus.ACTIVE)
+                .metadata("{}") // Valid JSON for jsonb column
                 .build();
         
         // Save the user
         User savedUser = userRepository.save(user);
-        entityManager.flush();
-        entityManager.clear();
         
         // Verify the user was saved
         assertNotNull(savedUser.getId());
@@ -128,11 +140,10 @@ class SimpleWorkingTest {
                 .name("Test Tenant")
                 .domain("test.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
+                .settings("{}") // Valid JSON for jsonb column
                 .build();
         
         Tenant savedTenant = tenantRepository.save(tenant);
-        entityManager.flush();
-        entityManager.clear();
         
         // Test tenant repository methods
         assertTrue(tenantRepository.existsByTenantCodeAndDeletedAtIsNull("test-tenant"));
