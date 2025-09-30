@@ -29,12 +29,12 @@ public interface TenantPolicyRepository extends JpaRepository<TenantPolicy, UUID
      * Finds applicable policies for authorization evaluation.
      * This is a complex query that checks subjects, resources, and actions arrays.
      */
-    @Query("SELECT p FROM TenantPolicy p WHERE p.tenant.id = :tenantId " +
-           "AND p.status = 'ACTIVE' AND p.deletedAt IS NULL " +
+    @Query(value = "SELECT p.* FROM tenant_policies p WHERE p.tenant_id = :tenantId " +
+           "AND p.status = 'ACTIVE' AND p.deleted_at IS NULL " +
            "AND (p.subjects IS NULL OR :subject = ANY(p.subjects) OR '*' = ANY(p.subjects)) " +
            "AND (p.resources IS NULL OR :resource = ANY(p.resources) OR '*' = ANY(p.resources)) " +
            "AND (p.actions IS NULL OR :action = ANY(p.actions) OR '*' = ANY(p.actions)) " +
-           "ORDER BY p.priority ASC")
+           "ORDER BY p.priority ASC", nativeQuery = true)
     List<TenantPolicy> findApplicablePolicies(
         @Param("tenantId") UUID tenantId,
         @Param("subject") String subject,
@@ -68,8 +68,8 @@ public interface TenantPolicyRepository extends JpaRepository<TenantPolicy, UUID
     /**
      * Finds policies with specific tags.
      */
-    @Query("SELECT p FROM TenantPolicy p WHERE p.tenant.id = :tenantId " +
-           "AND :tag = ANY(p.tags) AND p.deletedAt IS NULL")
+    @Query(value = "SELECT p.* FROM tenant_policies p WHERE p.tenant_id = :tenantId " +
+           "AND :tag = ANY(p.tags) AND p.deleted_at IS NULL", nativeQuery = true)
     List<TenantPolicy> findByTenantIdAndTag(@Param("tenantId") UUID tenantId, @Param("tag") String tag);
     
     /**
@@ -80,8 +80,8 @@ public interface TenantPolicyRepository extends JpaRepository<TenantPolicy, UUID
     /**
      * Finds policies that need review (e.g., old policies without recent updates).
      */
-    @Query("SELECT p FROM TenantPolicy p WHERE p.tenant.id = :tenantId " +
-           "AND p.status = 'ACTIVE' AND p.deletedAt IS NULL " +
-           "AND p.updatedAt < CURRENT_TIMESTAMP - INTERVAL '180 days'")
+    @Query(value = "SELECT p.* FROM tenant_policies p WHERE p.tenant_id = :tenantId " +
+           "AND p.status = 'ACTIVE' AND p.deleted_at IS NULL " +
+           "AND p.updated_at < CURRENT_TIMESTAMP - INTERVAL '180 days'", nativeQuery = true)
     List<TenantPolicy> findPoliciesNeedingReview(@Param("tenantId") UUID tenantId);
 }

@@ -65,8 +65,13 @@ public interface UserCredentialRepository extends JpaRepository<UserCredential, 
     /**
      * Finds TOTP credentials for a user.
      */
-    Optional<UserCredential> findByUserAndCredentialTypeAndStatusAndDeletedAtIsNullForTotp(
-        User user, UserCredential.CredentialType credentialType, UserCredential.CredentialStatus status);
+    @Query("SELECT c FROM UserCredential c WHERE c.user = :user " +
+           "AND c.credentialType = :credentialType AND c.status = :status " +
+           "AND c.deletedAt IS NULL")
+    Optional<UserCredential> findTotpCredentialsForUser(
+        @Param("user") User user, 
+        @Param("credentialType") UserCredential.CredentialType credentialType, 
+        @Param("status") UserCredential.CredentialStatus status);
     
     /**
      * Finds backup codes for a user.

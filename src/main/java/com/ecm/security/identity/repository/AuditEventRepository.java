@@ -93,9 +93,9 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
     /**
      * Finds audit events for compliance reporting by tenant.
      */
-    @Query("SELECT a FROM AuditEvent a WHERE a.tenantId = :tenantId " +
-           "AND :complianceFlag = ANY(a.complianceFlags) " +
-           "AND a.timestamp BETWEEN :startTime AND :endTime ORDER BY a.timestamp DESC")
+    @Query(value = "SELECT a.* FROM audit_events a WHERE a.tenant_id = :tenantId " +
+           "AND :complianceFlag = ANY(a.compliance_flags) " +
+           "AND a.timestamp BETWEEN :startTime AND :endTime ORDER BY a.timestamp DESC", nativeQuery = true)
     List<AuditEvent> findComplianceEvents(
         @Param("tenantId") UUID tenantId, 
         @Param("complianceFlag") String complianceFlag,

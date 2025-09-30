@@ -112,3 +112,8 @@ tasks.register('integrationTest', Test) {
 	
 	useJUnitPlatform()
 }
+
+// Configure duplicate handling for integration test resources
+tasks.named('processIntegrationTestResources') {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

@@ -33,7 +33,6 @@ public class AuthorizationService {
     
     private final PolicyService policyService;
     private final AuditService auditService;
-    private final TenantContextService tenantContextService;
     
     /**
      * Evaluates authorization for a single request.

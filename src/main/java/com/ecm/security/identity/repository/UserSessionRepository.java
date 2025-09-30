@@ -77,7 +77,7 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
     /**
      * Finds sessions that require step-up authentication.
      */
-    @Query("SELECT s FROM UserSession s WHERE s.stepUpRequired = true " +
+    @Query("SELECT s FROM UserSession s WHERE s.stepUpRequiredFor IS NOT NULL " +
            "AND s.stepUpCompleted = false AND s.status = 'ACTIVE'")
     List<UserSession> findSessionsRequiringStepUp();
     

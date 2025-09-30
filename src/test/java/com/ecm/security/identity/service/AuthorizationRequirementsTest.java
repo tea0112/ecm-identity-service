@@ -51,7 +51,7 @@ class AuthorizationRequirementsTest {
 
     @BeforeEach
     void setUp() {
-        authorizationService = new AuthorizationService(policyService, auditService, tenantContextService);
+        authorizationService = new AuthorizationService(policyService, auditService);
         testTenantId = UUID.randomUUID();
         testUser = createTestUser();
         testSession = createTestSession();

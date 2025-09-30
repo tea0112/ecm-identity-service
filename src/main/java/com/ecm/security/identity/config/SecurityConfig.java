@@ -62,7 +62,8 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, 
+            com.ecm.security.identity.service.CustomUserDetailsService customUserDetailsService) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
                 // Public endpoints - no authentication required
@@ -152,7 +153,7 @@ public class SecurityConfig {
             .rememberMe(remember -> remember
                 .key("ecm-identity-remember-me-key")
                 .tokenValiditySeconds(86400 * 30) // 30 days
-                .userDetailsService(userDetailsService())
+                .userDetailsService(customUserDetailsService)
                 .rememberMeParameter("remember-me")
                 .rememberMeCookieName("remember-me")
             )
@@ -203,14 +204,12 @@ public class SecurityConfig {
     
     /**
      * Custom UserDetailsService for loading user information.
-     * Will be implemented separately to integrate with our User domain model.
+     * Uses the CustomUserDetailsService implementation.
      */
     @Bean
-    public org.springframework.security.core.userdetails.UserDetailsService userDetailsService() {
-        // This will be implemented as a separate service
-        return username -> {
-            throw new UnsupportedOperationException("UserDetailsService not yet implemented");
-        };
+    public org.springframework.security.core.userdetails.UserDetailsService userDetailsService(
+            com.ecm.security.identity.service.CustomUserDetailsService customUserDetailsService) {
+        return customUserDetailsService;
     }
     
     /**

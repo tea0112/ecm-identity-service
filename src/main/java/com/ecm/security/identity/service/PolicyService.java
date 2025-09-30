@@ -5,6 +5,7 @@ import com.ecm.security.identity.repository.TenantPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +18,16 @@ import java.util.UUID;
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PolicyService {
     
     private final TenantPolicyRepository policyRepository;
     private final AuditService auditService;
+    
+    public PolicyService(TenantPolicyRepository policyRepository, @Lazy AuditService auditService) {
+        this.policyRepository = policyRepository;
+        this.auditService = auditService;
+    }
     
     /**
      * Gets all applicable policies for authorization evaluation.
