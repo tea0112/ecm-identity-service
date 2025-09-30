@@ -108,7 +108,7 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean mfaEnabled = false;
     
-    @Column(name = "mfa_backup_codes", columnDefinition = "clob")
+    @Column(name = "mfa_backup_codes", columnDefinition = "text")
     private String mfaBackupCodes;
     
     @Column(name = "failed_login_attempts", nullable = false)
@@ -153,7 +153,7 @@ public class User extends BaseEntity {
     @Column(name = "parent_email", length = 255)
     private String parentEmail;
     
-    @Column(name = "metadata", columnDefinition = "clob")
+    @Column(name = "metadata", columnDefinition = "text")
     private String metadata;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

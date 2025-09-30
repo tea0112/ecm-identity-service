@@ -2,10 +2,9 @@ package com.ecm.security.identity.integration;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -17,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 })
 @EntityScan("com.ecm.security.identity.domain")
 @EnableJpaRepositories("com.ecm.security.identity.repository")
+@EnableJpaAuditing
 @ActiveProfiles("integration-test")
 public class TestDataJpaConfig {
 }

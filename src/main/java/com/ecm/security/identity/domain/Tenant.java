@@ -55,7 +55,7 @@ public class Tenant extends BaseEntity {
     @Column(name = "max_users")
     private Integer maxUsers;
     
-    @Column(name = "settings", columnDefinition = "clob")
+    @Column(name = "settings", columnDefinition = "text")
     private String settings;
     
     @Column(name = "crypto_key_id", length = 255)
