@@ -300,6 +300,7 @@ class ComplianceIntegrationTest {
         
         // Provide new consent
         Map<String, Object> newConsentRequest = Map.of(
+            "userId", euUser.getId().toString(),
             "termsVersion", "v2.2",
             "privacyPolicyVersion", "v1.6",
             "consentGiven", true,

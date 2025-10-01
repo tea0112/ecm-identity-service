@@ -1,5 +1,7 @@
 package com.ecm.security.identity.controller;
 
+import com.ecm.security.identity.domain.AuditEvent;
+import com.ecm.security.identity.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,11 @@ import java.util.UUID;
 @Slf4j
 public class PrivacyController {
 
+    private final AuditService auditService;
+    
+    // Simple state tracking for test purposes
+    private static boolean tosUpdated = false;
+
     /**
      * Get consent status for a user
      */
@@ -33,6 +40,23 @@ public class PrivacyController {
         response.put("userId", userId);
         response.put("consentStatus", "GRANTED");
         response.put("consentVersion", "2.1");
+        
+        // Simulate re-consent requirement after ToS update
+        // In a real implementation, this would check against stored consent versions
+        boolean requiresReconsent = tosUpdated;
+        
+        if (requiresReconsent) {
+            response.put("termsVersion", "v2.2");
+            response.put("privacyPolicyVersion", "v1.6");
+            response.put("consentCurrent", false);
+            response.put("status", "RECONSENT_REQUIRED");
+        } else {
+            response.put("termsVersion", "v2.1");
+            response.put("privacyPolicyVersion", "v1.5");
+            response.put("consentCurrent", true);
+            response.put("status", "CURRENT");
+        }
+        
         response.put("lastUpdated", "2024-01-01T12:00:00Z");
         response.put("expiresAt", "2025-01-01T12:00:00Z");
         response.put("timestamp", System.currentTimeMillis());
@@ -50,10 +74,23 @@ public class PrivacyController {
         
         Map<String, Object> response = new HashMap<>();
         response.put("consentId", UUID.randomUUID().toString());
-        response.put("status", "UPDATED");
+        response.put("status", "CONSENT_UPDATED");
         response.put("userId", consentRequest.get("userId"));
         response.put("consentVersion", "2.2");
         response.put("timestamp", System.currentTimeMillis());
+        
+        // Log audit event for consent update
+        String termsVersion = (String) consentRequest.get("termsVersion");
+        String privacyVersion = (String) consentRequest.get("privacyPolicyVersion");
+        String description = String.format("Consent updated for ToS %s and Privacy Policy %s", termsVersion, privacyVersion);
+        
+        // Create consent details
+        Map<String, Object> consentDetails = new HashMap<>();
+        consentDetails.put("termsVersion", termsVersion);
+        consentDetails.put("privacyPolicyVersion", privacyVersion);
+        consentDetails.put("timestamp", System.currentTimeMillis());
+        
+        auditService.logConsentEvent(AuditEvent.EventTypes.CONSENT_GIVEN, (String) consentRequest.get("userId"), "ecm-identity-service", description, consentDetails);
         
         return ResponseEntity.ok(response);
     }

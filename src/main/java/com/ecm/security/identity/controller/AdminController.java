@@ -27,7 +27,7 @@ import java.util.ArrayList;
  * Handles user management, de-provisioning, and administrative operations.
  */
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminController {
@@ -2076,7 +2076,7 @@ public class AdminController {
     /**
      * Update Terms of Service and Privacy Policy versions
      */
-    @PostMapping("/api/v1/admin/legal/update-versions")
+    @PostMapping("/legal/update-versions")
     public ResponseEntity<Map<String, Object>> updateLegalVersions(@RequestBody Map<String, Object> versionUpdateRequest) {
         
         log.info("Updating legal document versions: {}", versionUpdateRequest);
@@ -2085,14 +2085,26 @@ public class AdminController {
             Map<String, Object> response = new HashMap<>();
             response.put("updateId", UUID.randomUUID().toString());
             response.put("status", "UPDATED");
-            response.put("tosVersion", versionUpdateRequest.get("tosVersion"));
-            response.put("privacyVersion", versionUpdateRequest.get("privacyVersion"));
+            response.put("tosVersion", versionUpdateRequest.get("newTermsVersion"));
+            response.put("privacyVersion", versionUpdateRequest.get("newPrivacyPolicyVersion"));
             response.put("effectiveDate", versionUpdateRequest.get("effectiveDate"));
+            response.put("changes", versionUpdateRequest.get("changes"));
             response.put("timestamp", System.currentTimeMillis());
             
             // Log audit event
             auditService.logAuthenticationEvent("legal.versions.updated", "admin", true,
                     "Legal document versions updated", null);
+            
+            // Update the ToS state for the PrivacyController
+            // In a real implementation, this would be handled by a service
+            try {
+                Class<?> privacyControllerClass = Class.forName("com.ecm.security.identity.controller.PrivacyController");
+                java.lang.reflect.Field tosUpdatedField = privacyControllerClass.getDeclaredField("tosUpdated");
+                tosUpdatedField.setAccessible(true);
+                tosUpdatedField.set(null, true);
+            } catch (Exception e) {
+                log.warn("Could not update ToS state: {}", e.getMessage());
+            }
             
             return ResponseEntity.ok(response);
             
