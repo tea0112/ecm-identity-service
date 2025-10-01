@@ -63,6 +63,7 @@ public class ConsentController {
                 
                 // Try to find user by ID first
                 Optional<User> userOpt = userRepository.findById(UUID.fromString(userId));
+                log.info("User lookup result: {}", userOpt.isPresent() ? "found" : "not found");
                 if (userOpt.isEmpty()) {
                     // If not found by ID, try to find by email (for test environment)
                     log.info("User not found by ID, trying to find by email");
@@ -97,8 +98,8 @@ public class ConsentController {
             response.put("applicationId", consent.getApplicationId());
             response.put("consentType", consent.getConsentType().toString().toLowerCase());
             
-            auditService.logAuthenticationEvent("consent.granted", user.getEmail(), true, 
-                    "Consent granted for application: " + applicationId);
+            auditService.logConsentEvent("consent.granted", user.getId().toString(), applicationId, 
+                    "Consent granted for application: " + applicationId, Map.of("consentId", consent.getId().toString()));
             
             return ResponseEntity.ok(response);
             
@@ -204,8 +205,9 @@ public class ConsentController {
                 response.put("conditions", Arrays.asList("business_hours_only"));
             }
             
-            auditService.logAuthenticationEvent("consent.validated", userEmail, isValid, 
-                    String.format("Consent validation for %s:%s on %s", action, resource, applicationId));
+            auditService.logConsentEvent("consent.validated", user.getId().toString(), applicationId, 
+                    String.format("Consent validation for %s:%s on %s", action, resource, applicationId), 
+                    Map.of("resource", resource, "action", action, "authorized", isValid));
             
             return ResponseEntity.ok(response);
             
@@ -257,8 +259,8 @@ public class ConsentController {
             response.put("deniedPermissions", deniedCount);
             response.put("changedPermissions", changedCount);
             
-            auditService.logAuthenticationEvent("consent.modified", "test-user", true, 
-                    "Consent modified: " + consentId);
+            auditService.logConsentEvent("consent.modified", consent.getUser().getId().toString(), consent.getApplicationId(), 
+                    "Consent modified: " + consentId, Map.of("consentId", consentId.toString(), "changedPermissions", changedCount));
             
             return ResponseEntity.ok(response);
             
@@ -297,8 +299,8 @@ public class ConsentController {
             response.put("revokedAt", consent.getRevokedAt().toString());
             response.put("revocationReason", consent.getRevocationReason());
             
-            auditService.logAuthenticationEvent("consent.revoked", "test-user", true, 
-                    "Consent revoked: " + consentId + " - " + reason);
+            auditService.logConsentEvent("consent.revoked", consent.getUser().getId().toString(), consent.getApplicationId(), 
+                    "Consent revoked: " + consentId + " - " + reason, Map.of("consentId", consentId.toString(), "reason", reason));
             
             return ResponseEntity.ok(response);
             

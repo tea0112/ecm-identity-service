@@ -231,6 +231,45 @@ public class AuditService {
     }
     
     /**
+     * Logs a consent management event.
+     */
+    @Transactional
+    public void logConsentEvent(String eventType, String userId, String applicationId, String description, Map<String, Object> details) {
+        try {
+            log.info("Logging consent event: {} for userId: {}", eventType, userId);
+            AuditEvent event = createBaseEvent(eventType);
+            event.setActorType("USER");
+            event.setResource("consent");
+            event.setAction(eventType.replace("consent.", ""));
+            event.setOutcome("SUCCESS");
+            event.setSeverity(AuditEvent.Severity.INFO);
+            
+            // Set userId if provided
+            if (userId != null) {
+                try {
+                    event.setUserId(UUID.fromString(userId));
+                    log.info("Set userId {} for consent event: {}", userId, eventType);
+                } catch (IllegalArgumentException e) {
+                    log.debug("Invalid userId format in consent event: {}", userId);
+                }
+            }
+            
+            event.setDescription(description);
+            
+            // Add consent details
+            if (details != null) {
+                event.setDetails(createConsentDetailsJson(eventType, applicationId, details));
+            }
+            
+            saveAuditEvent(event);
+            log.info("Successfully saved consent event: {} for userId: {}", eventType, userId);
+            
+        } catch (Exception e) {
+            log.error("Failed to log consent event", e);
+        }
+    }
+    
+    /**
      * Logs a user session event.
      */
     @Async
@@ -556,6 +595,40 @@ public class AuditService {
                     "error": "Failed to serialize details"
                 }""",
                 incidentType,
+                Instant.now().toString());
+        }
+    }
+    
+    private String createConsentDetailsJson(String eventType, String applicationId, Map<String, Object> details) {
+        try {
+            String detailsJson = "{}";
+            if (details != null) {
+                detailsJson = objectMapper.writeValueAsString(details);
+            }
+            
+            return String.format("""
+                {
+                    "eventType": "%s",
+                    "applicationId": "%s",
+                    "details": %s,
+                    "timestamp": "%s"
+                }""",
+                eventType,
+                applicationId != null ? applicationId : "",
+                detailsJson,
+                Instant.now().toString());
+        } catch (Exception e) {
+            log.warn("Failed to serialize consent details, using fallback", e);
+            return String.format("""
+                {
+                    "eventType": "%s",
+                    "applicationId": "%s",
+                    "details": {},
+                    "timestamp": "%s",
+                    "error": "Failed to serialize details"
+                }""",
+                eventType,
+                applicationId != null ? applicationId : "",
                 Instant.now().toString());
         }
     }
