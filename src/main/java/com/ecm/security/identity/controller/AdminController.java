@@ -90,7 +90,7 @@ public class AdminController {
                 // Log de-provisioning event for testing purposes
                 try {
                     auditService.logSecurityIncident(
-                        "user.deprovisioned",
+                        "admin.user.deprovisioned",
                         "User account de-provisioned instantaneously - " + request.getReason(),
                         "CRITICAL",
                         Map.of(
@@ -145,7 +145,7 @@ public class AdminController {
             // Log de-provisioning event
             try {
                 auditService.logSecurityIncident(
-                    "user.deprovisioned",
+                    "admin.user.deprovisioned",
                     "User account de-provisioned instantaneously - " + request.getReason(),
                     "CRITICAL",
                     Map.of(
