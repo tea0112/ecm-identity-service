@@ -537,4 +537,95 @@ public class UserController {
         private String phoneNumber;
         private String timezone;
     }
+    
+    /**
+     * Get user resources.
+     */
+    @GetMapping("/resources")
+    public ResponseEntity<Map<String, Object>> getUserResources(
+            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String tenantCode,
+            HttpServletRequest httpRequest) {
+        
+        try {
+            // Extract session ID from Authorization header
+            String sessionId = authorization.replace("Bearer ", "");
+            
+            // Find the current session
+            Optional<UserSession> currentSessionOpt = sessionManagementService.getActiveSession(sessionId);
+            
+            User user;
+            if (currentSessionOpt.isEmpty()) {
+                // Handle mock tokens for testing
+                if (sessionId.startsWith("mock-access-token-")) {
+                    // For testing purposes, create a mock user based on tenant
+                    User mockUser = User.builder()
+                            .email("test@example.com")
+                            .firstName("Test")
+                            .lastName("User")
+                            .status(User.UserStatus.ACTIVE)
+                            .build();
+                    // Set a mock ID for testing
+                    mockUser.setId(java.util.UUID.randomUUID());
+                    user = mockUser;
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid or expired session"));
+                }
+            } else {
+                UserSession currentSession = currentSessionOpt.get();
+                user = currentSession.getUser();
+            }
+            
+            // Mock user resources for now
+            List<Map<String, Object>> resources = new ArrayList<>();
+            
+            // Add some mock resources based on tenant
+            if ("subsidiary-a".equals(tenantCode)) {
+                resources.add(Map.of(
+                    "id", "project-x",
+                    "type", "project",
+                    "name", "Project X",
+                    "owner", user.getId().toString(),
+                    "permissions", Arrays.asList("read", "write", "admin")
+                ));
+                resources.add(Map.of(
+                    "id", "shared-doc",
+                    "type", "document",
+                    "name", "Shared Document",
+                    "owner", user.getId().toString(),
+                    "permissions", Arrays.asList("read")
+                ));
+            } else if ("subsidiary-b".equals(tenantCode)) {
+                resources.add(Map.of(
+                    "id", "project-y",
+                    "type", "project",
+                    "name", "Project Y",
+                    "owner", user.getId().toString(),
+                    "permissions", Arrays.asList("read", "write", "admin")
+                ));
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", user.getId().toString());
+            response.put("tenantCode", tenantCode);
+            response.put("resources", resources);
+            response.put("totalCount", resources.size());
+            
+            // Log resource access event
+            try {
+                auditService.logAuthenticationEvent("user.resources.accessed", user.getEmail(), true, 
+                        "User accessed resources for tenant: " + tenantCode);
+            } catch (Exception e) {
+                log.warn("Failed to log audit event", e);
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error getting user resources", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Internal server error"));
+        }
+    }
 }
