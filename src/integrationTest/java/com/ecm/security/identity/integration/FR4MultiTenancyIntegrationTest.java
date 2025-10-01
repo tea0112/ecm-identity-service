@@ -280,21 +280,38 @@ class FR4MultiTenancyIntegrationTest {
 
     @Test
     @DisplayName("FR4.2 - Tenant Lifecycle Management - Splitting and Merging")
-    @Commit
     void testTenantLifecycleManagementSplittingAndMerging() throws Exception {
-        // Create parent tenant with multiple users and resources
+        // Create parent tenant via API call to avoid transaction isolation issues
+        Map<String, Object> tenantCreationRequest = Map.of(
+                "tenantCode", "parent-corp",
+                "name", "Parent Corporation",
+                "domain", "parent.example.com"
+        );
+        
+        ResponseEntity<Map> tenantCreationResponse = restTemplate.postForEntity(
+                baseUrl + "/admin/tenant",
+                tenantCreationRequest,
+                Map.class
+        );
+        
+        assertEquals(HttpStatus.OK, tenantCreationResponse.getStatusCode());
+        Map<String, Object> tenantResult = tenantCreationResponse.getBody();
+        String parentTenantId = (String) tenantResult.get("tenantId");
+        String parentTenantCode = (String) tenantResult.get("tenantCode");
+        
+        // Create a mock tenant object for the test
         Tenant parentTenant = Tenant.builder()
-                .tenantCode("parent-corp")
+                .tenantCode(parentTenantCode)
                 .name("Parent Corporation")
                 .domain("parent.example.com")
                 .status(Tenant.TenantStatus.ACTIVE)
                 .build();
-        parentTenant = tenantRepository.save(parentTenant);
+        parentTenant.setId(java.util.UUID.fromString(parentTenantId));
 
-        // Create users in parent tenant
-        User parentUser1 = createUserInTenant("user1@parent.example.com", "User", "One", parentTenant);
-        User parentUser2 = createUserInTenant("user2@parent.example.com", "User", "Two", parentTenant);
-        User parentUser3 = createUserInTenant("user3@parent.example.com", "User", "Three", parentTenant);
+        // Create users in parent tenant via API calls
+        User parentUser1 = createUserViaApi("user1@parent.example.com", "User", "One", parentTenantCode);
+        User parentUser2 = createUserViaApi("user2@parent.example.com", "User", "Two", parentTenantCode);
+        User parentUser3 = createUserViaApi("user3@parent.example.com", "User", "Three", parentTenantCode);
 
         // Create resources and permissions in parent tenant
         Map<String, Object> resourceCreationRequest = Map.of(
@@ -437,15 +454,56 @@ class FR4MultiTenancyIntegrationTest {
     @Test
     @DisplayName("FR4.3 - Cross-Tenant Collaboration - Guest Users and Sharing")
     void testCrossTenantCollaborationGuestUsersAndSharing() throws Exception {
+        // Create tenant1 via API call to avoid transaction isolation issues
+        Map<String, Object> tenant1CreationRequest = Map.of(
+                "tenantCode", "tenant-alpha",
+                "name", "Alpha Corporation",
+                "domain", "alpha.example.com"
+        );
+        
+        ResponseEntity<Map> tenant1CreationResponse = restTemplate.postForEntity(
+                baseUrl + "/admin/tenant",
+                tenant1CreationRequest,
+                Map.class
+        );
+        
+        assertEquals(HttpStatus.OK, tenant1CreationResponse.getStatusCode());
+        Map<String, Object> tenant1Result = tenant1CreationResponse.getBody();
+        String tenant1Id = (String) tenant1Result.get("tenantId");
+        String tenant1Code = (String) tenant1Result.get("tenantCode");
+        
+        // Create tenant1User via API call
+        User tenant1User = createUserViaApi("user1@alpha.example.com", "User", "One", tenant1Code);
+        
+        // Create tenant2 via API call for cross-tenant sharing
+        Map<String, Object> tenant2CreationRequest = Map.of(
+                "tenantCode", "tenant-beta",
+                "name", "Beta Industries",
+                "domain", "beta.example.com"
+        );
+        
+        ResponseEntity<Map> tenant2CreationResponse = restTemplate.postForEntity(
+                baseUrl + "/admin/tenant",
+                tenant2CreationRequest,
+                Map.class
+        );
+        
+        assertEquals(HttpStatus.OK, tenant2CreationResponse.getStatusCode());
+        Map<String, Object> tenant2Result = tenant2CreationResponse.getBody();
+        String tenant2Code = (String) tenant2Result.get("tenantCode");
+        
+        // Create tenant2User via API call
+        User tenant2User = createUserViaApi("user2@beta.example.com", "User", "Two", tenant2Code);
+        
         // Test guest user invitation
-        String tenant1Token = authenticateUserInTenant(tenant1User.getEmail(), "password", tenant1.getTenantCode());
+        String tenant1Token = authenticateUserInTenant(tenant1User.getEmail(), "password", tenant1Code);
         HttpHeaders tenant1Headers = new HttpHeaders();
         tenant1Headers.setBearerAuth(tenant1Token);
-        tenant1Headers.set("X-Tenant-ID", tenant1.getTenantCode());
+        tenant1Headers.set("X-Tenant-ID", tenant1Code);
 
         Map<String, Object> guestInvitationRequest = Map.of(
                 "guestEmail", "guest@external.example.com",
-                "invitingTenant", tenant1.getTenantCode(),
+                "invitingTenant", tenant1Code,
                 "guestPermissions", Arrays.asList("project:read", "document:comment"),
                 "scopedResources", Arrays.asList("project:collaboration-project"),
                 "invitationExpiry", Instant.now().plus(7, ChronoUnit.DAYS).toString(),
@@ -471,7 +529,7 @@ class FR4MultiTenancyIntegrationTest {
 
         // Test guest user acceptance
         Map<String, Object> guestAcceptanceRequest = Map.of(
-                "hostTenantCode", tenant1.getTenantCode(),
+                "hostTenantCode", tenant1Code,
                 "invitationId", invitationId,
                 "invitationToken", invitationToken,
                 "guestUserInfo", Map.of(
@@ -500,8 +558,8 @@ class FR4MultiTenancyIntegrationTest {
 
         // Test cross-tenant resource sharing
         Map<String, Object> resourceSharingRequest = Map.of(
-                "sourceTenant", tenant1.getTenantCode(),
-                "targetTenant", tenant2.getTenantCode(),
+                "sourceTenant", tenant1Code,
+                "targetTenant", tenant2Code,
                 "sharedResource", Map.of(
                         "resourceId", "shared-document-123",
                         "resourceType", "document",
@@ -539,7 +597,7 @@ class FR4MultiTenancyIntegrationTest {
                 "requestedPermissions", Arrays.asList(
                         "calendar:read", "tasks:write", "notifications:send"
                 ),
-                "tenantCode", tenant1.getTenantCode(),
+                "tenantCode", tenant1Code,
                 "installationType", "tenant_wide",
                 "privacyPolicyUrl", "https://thirdparty.example.com/privacy",
                 "termsOfServiceUrl", "https://thirdparty.example.com/terms"
@@ -565,7 +623,7 @@ class FR4MultiTenancyIntegrationTest {
 
         Map<String, Object> consentRequest = Map.of(
                 "guestUserId", guestUserId,
-                "hostTenant", tenant1.getTenantCode(),
+                "hostTenant", tenant1Code,
                 "requestedAccess", Arrays.asList("project:read", "document:comment"),
                 "dataProcessingConsent", Map.of(
                         "personalDataAccess", true,
@@ -613,7 +671,15 @@ class FR4MultiTenancyIntegrationTest {
         assertNotNull(validationResult.get("scopedPermissions"));
 
         // Verify comprehensive audit events for cross-tenant operations
-        List<AuditEvent> crossTenantEvents = auditEventRepository.findByTenantId(tenant1.getId());
+        List<AuditEvent> crossTenantEvents = auditEventRepository.findByTenantId(java.util.UUID.fromString(tenant1Id));
+        
+        // Debug: Print tenant ID and found events
+        System.out.println("DEBUG: Looking for events with tenant ID: " + tenant1Id);
+        System.out.println("DEBUG: Found " + crossTenantEvents.size() + " audit events");
+        for (AuditEvent event : crossTenantEvents) {
+            System.out.println("DEBUG: Event type: " + event.getEventType() + ", tenant ID: " + event.getTenantId());
+        }
+        
         assertTrue(crossTenantEvents.stream().anyMatch(event -> 
                 event.getEventType().equals("guest.user.invited")));
         assertTrue(crossTenantEvents.stream().anyMatch(event -> 
@@ -622,6 +688,7 @@ class FR4MultiTenancyIntegrationTest {
                 event.getEventType().equals("marketplace.app.install.requested")));
         assertTrue(crossTenantEvents.stream().anyMatch(event -> 
                 event.getEventType().equals("guest.consent.granted") &&
+                event.getComplianceFlags() != null &&
                 Arrays.asList(event.getComplianceFlags()).contains("CROSS_TENANT_CONSENT")));
     }
 
@@ -639,6 +706,37 @@ class FR4MultiTenancyIntegrationTest {
                 .status(User.UserStatus.ACTIVE)
                 .build();
         return userRepository.save(user);
+    }
+    
+    private User createUserViaApi(String email, String firstName, String lastName, String tenantCode) throws Exception {
+        Map<String, Object> userCreationRequest = Map.of(
+                "email", email,
+                "firstName", firstName,
+                "lastName", lastName,
+                "password", "password",
+                "tenantCode", tenantCode
+        );
+        
+        ResponseEntity<Map> userCreationResponse = restTemplate.postForEntity(
+                baseUrl + "/admin/tenant/user",
+                userCreationRequest,
+                Map.class
+        );
+        
+        assertEquals(HttpStatus.OK, userCreationResponse.getStatusCode());
+        Map<String, Object> userResult = userCreationResponse.getBody();
+        String userId = (String) userResult.get("userId");
+        
+        // Create a mock user object for the test
+        User user = User.builder()
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .status(User.UserStatus.ACTIVE)
+                .build();
+        user.setId(java.util.UUID.fromString(userId));
+        
+        return user;
     }
 
     private HttpHeaders createTenantHeaders(String tenantCode) {

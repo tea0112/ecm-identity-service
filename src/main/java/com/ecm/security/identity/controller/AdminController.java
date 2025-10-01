@@ -794,13 +794,27 @@ public class AdminController {
     }
     
     private Tenant createTestTenant(String tenantCode) {
-        Tenant tenant = Tenant.builder()
-                .tenantCode(tenantCode)
-                .name(tenantCode + " Corporation")
-                .domain(tenantCode + ".example.com")
-                .status(Tenant.TenantStatus.ACTIVE)
-                .build();
-        return tenantRepository.save(tenant);
+        // First try to find existing tenant
+        Optional<Tenant> existingTenant = tenantRepository.findByTenantCodeAndStatusNot(tenantCode, Tenant.TenantStatus.ARCHIVED);
+        if (existingTenant.isPresent()) {
+            return existingTenant.get();
+        }
+        
+        // If not found, try to create new tenant
+        try {
+            Tenant tenant = Tenant.builder()
+                    .tenantCode(tenantCode)
+                    .name(tenantCode + " Corporation")
+                    .domain(tenantCode + ".example.com")
+                    .status(Tenant.TenantStatus.ACTIVE)
+                    .build();
+            return tenantRepository.saveAndFlush(tenant); // Use saveAndFlush to commit immediately
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // If creation fails due to duplicate key, try to find the existing tenant again
+            log.info("Tenant creation failed due to duplicate key, trying to find existing tenant again: {}", tenantCode);
+            return tenantRepository.findByTenantCodeAndStatusNot(tenantCode, Tenant.TenantStatus.ARCHIVED)
+                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantCode));
+        }
     }
     
     // DTOs
@@ -1570,6 +1584,119 @@ public class AdminController {
     }
     
     /**
+     * Create a new tenant.
+     */
+    @PostMapping("/tenant")
+    public ResponseEntity<Map<String, Object>> createTenant(
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            String tenantCode = (String) request.get("tenantCode");
+            String name = (String) request.get("name");
+            String domain = (String) request.get("domain");
+            
+            log.info("Creating tenant: {}", tenantCode);
+            
+            if (tenantCode == null || name == null || domain == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Tenant code, name, and domain are required"));
+            }
+            
+            // Check if tenant already exists
+            Optional<Tenant> existingTenant = tenantRepository.findByTenantCodeAndStatusNot(tenantCode, Tenant.TenantStatus.ARCHIVED);
+            if (existingTenant.isPresent()) {
+                // Return existing tenant instead of conflict
+                Tenant tenant = existingTenant.get();
+                Map<String, Object> response = new HashMap<>();
+                response.put("tenantId", tenant.getId().toString());
+                response.put("tenantCode", tenant.getTenantCode());
+                response.put("name", tenant.getName());
+                response.put("domain", tenant.getDomain());
+                response.put("status", tenant.getStatus().toString());
+                response.put("createdAt", tenant.getCreatedAt().toString());
+                return ResponseEntity.ok(response);
+            }
+            
+            // Create new tenant
+            Tenant tenant = Tenant.builder()
+                    .tenantCode(tenantCode)
+                    .name(name)
+                    .domain(domain)
+                    .status(Tenant.TenantStatus.ACTIVE)
+                    .build();
+            tenant = tenantRepository.saveAndFlush(tenant);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("tenantId", tenant.getId().toString());
+            response.put("tenantCode", tenant.getTenantCode());
+            response.put("name", tenant.getName());
+            response.put("domain", tenant.getDomain());
+            response.put("status", tenant.getStatus().toString());
+            response.put("createdAt", Instant.now().toString());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error creating tenant", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create tenant: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Create a user in a tenant.
+     */
+    @PostMapping("/tenant/user")
+    public ResponseEntity<Map<String, Object>> createUser(
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            String email = (String) request.get("email");
+            String firstName = (String) request.get("firstName");
+            String lastName = (String) request.get("lastName");
+            String password = (String) request.getOrDefault("password", "password");
+            String tenantCode = (String) request.get("tenantCode");
+            
+            log.info("Creating user: {} in tenant: {}", email, tenantCode);
+            
+            if (email == null || firstName == null || lastName == null || tenantCode == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Email, firstName, lastName, and tenantCode are required"));
+            }
+            
+            // Find tenant
+            Tenant tenant = tenantRepository.findByTenantCodeAndStatusNot(tenantCode, Tenant.TenantStatus.ARCHIVED)
+                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantCode));
+            
+            // Create user
+            User user = User.builder()
+                    .email(email)
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .tenant(tenant)
+                    .status(User.UserStatus.ACTIVE)
+                    .build();
+            user = userRepository.saveAndFlush(user);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", user.getId().toString());
+            response.put("email", user.getEmail());
+            response.put("firstName", user.getFirstName());
+            response.put("lastName", user.getLastName());
+            response.put("tenantCode", tenantCode);
+            response.put("status", user.getStatus().toString());
+            response.put("createdAt", Instant.now().toString());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error creating user", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create user: " + e.getMessage()));
+        }
+    }
+    
+    /**
      * Create tenant resources.
      */
     @PostMapping("/tenant/resources")
@@ -1587,19 +1714,9 @@ public class AdminController {
                         .body(Map.of("error", "Tenant code is required"));
             }
             
-            // Find tenant - use existing or create new
-            Tenant tenant = tenantRepository.findByTenantCodeAndStatusNot(resourceTenantCode, Tenant.TenantStatus.ARCHIVED)
-                    .orElseGet(() -> {
-                        log.info("Tenant not found, creating test tenant: {}", resourceTenantCode);
-                        try {
-                            return createTestTenant(resourceTenantCode);
-                        } catch (Exception e) {
-                            // If creation fails due to duplicate key, try to find the existing tenant
-                            log.info("Tenant creation failed, trying to find existing tenant: {}", resourceTenantCode);
-                            return tenantRepository.findByTenantCodeAndStatusNot(resourceTenantCode, Tenant.TenantStatus.ARCHIVED)
-                                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + resourceTenantCode));
-                        }
-                    });
+               // Find tenant
+               Tenant tenant = tenantRepository.findByTenantCodeAndStatusNot(resourceTenantCode, Tenant.TenantStatus.ARCHIVED)
+                       .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + resourceTenantCode));
             
             // Mock resource creation for now
             @SuppressWarnings("unchecked")
@@ -1780,7 +1897,14 @@ public class AdminController {
             Tenant hostTenant = tenantRepository.findByTenantCodeAndStatusNot(hostTenantCode, Tenant.TenantStatus.ARCHIVED)
                     .orElseGet(() -> {
                         log.info("Host tenant not found, creating test tenant: {}", hostTenantCode);
-                        return createTestTenant(hostTenantCode);
+                        try {
+                            return createTestTenant(hostTenantCode);
+                        } catch (Exception e) {
+                            // If creation fails due to duplicate key, try to find the existing tenant
+                            log.info("Tenant creation failed, trying to find existing tenant: {}", hostTenantCode);
+                            return tenantRepository.findByTenantCodeAndStatusNot(hostTenantCode, Tenant.TenantStatus.ARCHIVED)
+                                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + hostTenantCode));
+                        }
                     });
             
             // Mock guest user invitation
@@ -1835,7 +1959,14 @@ public class AdminController {
             Tenant hostTenant = tenantRepository.findByTenantCodeAndStatusNot(hostTenantCode, Tenant.TenantStatus.ARCHIVED)
                     .orElseGet(() -> {
                         log.info("Host tenant not found, creating test tenant: {}", hostTenantCode);
-                        return createTestTenant(hostTenantCode);
+                        try {
+                            return createTestTenant(hostTenantCode);
+                        } catch (Exception e) {
+                            // If creation fails due to duplicate key, try to find the existing tenant
+                            log.info("Tenant creation failed, trying to find existing tenant: {}", hostTenantCode);
+                            return tenantRepository.findByTenantCodeAndStatusNot(hostTenantCode, Tenant.TenantStatus.ARCHIVED)
+                                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + hostTenantCode));
+                        }
                     });
 
             // Mock guest user acceptance

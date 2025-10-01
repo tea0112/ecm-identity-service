@@ -159,4 +159,10 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
      * Simple method to find audit events by tenant ID (for tests).
      */
     List<AuditEvent> findByTenantId(UUID tenantId);
+    
+    /**
+     * Find audit events by tenant code (for tests).
+     */
+    @Query(value = "SELECT ae.* FROM audit_events ae JOIN tenants t ON ae.tenant_id = t.id WHERE t.tenant_code = :tenantCode", nativeQuery = true)
+    List<AuditEvent> findByTenantCode(@Param("tenantCode") String tenantCode);
 }
