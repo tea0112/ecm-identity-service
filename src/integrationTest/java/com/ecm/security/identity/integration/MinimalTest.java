@@ -3,9 +3,13 @@ package com.ecm.security.identity.integration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,27 +18,44 @@ import java.sql.Statement;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Minimal database connectivity test using @DataJpaTest with H2.
- * This test focuses on basic database connectivity without complex entities.
+ * Minimal database connectivity test using PostgreSQL with Testcontainers.
+ * This test focuses on basic database connectivity without complex service dependencies.
  */
-@DataJpaTest
-@TestPropertySource(properties = {
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.show-sql=false",
-    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-    "spring.flyway.enabled=false"
-})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, 
+                classes = {TestDataJpaConfig.class})
+@Testcontainers
+@Transactional
+@org.springframework.test.context.ActiveProfiles("integration-test")
 class MinimalTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
+            .withDatabaseName("ecm_identity_test")
+            .withUsername("test")
+            .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.jpa.properties.hibernate.hbm2ddl.auto", () -> "create-drop");
+        registry.add("spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation", () -> "true");
+        registry.add("spring.flyway.enabled", () -> "false");
+    }
 
     @Autowired
     private DataSource dataSource;
 
-    @Autowired
-    private TestEntityManager entityManager;
+    @Test
+    @DisplayName("Testcontainers PostgreSQL starts successfully")
+    void testPostgresContainerStarts() {
+        assertTrue(postgres.isRunning());
+        assertNotNull(postgres.getJdbcUrl());
+    }
 
     @Test
     @DisplayName("Database connectivity works")
@@ -77,9 +98,9 @@ class MinimalTest {
     }
 
     @Test
-    @DisplayName("Entity manager works")
-    void testEntityManager() {
-        // Test that entity manager is available
-        assertNotNull(entityManager);
+    @DisplayName("DataSource injection works")
+    void testDataSourceInjection() {
+        // Test that DataSource is available
+        assertNotNull(dataSource);
     }
 }
