@@ -28,11 +28,15 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class AuthorizationService {
     
     private final PolicyService policyService;
     private final AuditService auditService;
+    
+    public AuthorizationService(PolicyService policyService, AuditService auditService) {
+        this.policyService = policyService;
+        this.auditService = auditService;
+    }
     
     /**
      * Evaluates authorization for a single request.

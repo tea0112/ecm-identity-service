@@ -99,11 +99,25 @@ class AuthenticationRequirementsTest {
         when(sessionRepository.findActiveSessionsByUserId(any())).thenReturn(List.of());
         when(deviceRepository.findByUserAndDeviceFingerprint(any(), any())).thenReturn(Optional.empty());
         when(deviceRepository.save(any())).thenReturn(testDevice);
-        when(sessionRepository.save(any())).thenReturn(mock(UserSession.class));
+        UserSession mockSession = mock(UserSession.class);
+        when(mockSession.getExpiresAt()).thenReturn(Instant.now().plus(Duration.ofHours(1)));
+        when(mockSession.getSessionId()).thenReturn("sess_test123");
+        when(sessionRepository.save(any())).thenReturn(mockSession);
         when(riskAssessmentService.calculateSessionRisk(any(), any(), any())).thenReturn(10.0);
         when(riskAssessmentService.getRiskFactors(any(), any(), any())).thenReturn(new String[]{});
+        when(tenantContextService.getCurrentTenantId()).thenReturn(testTenant.getId());
+        
+        // Mock tenant settings
+        TenantContextService.TenantSettings mockSettings = mock(TenantContextService.TenantSettings.class);
+        TenantContextService.TenantSettings.SessionPolicy mockPolicy = mock(TenantContextService.TenantSettings.SessionPolicy.class);
+        when(mockPolicy.getSessionTimeout()).thenReturn(3600); // 1 hour
+        when(mockSettings.getSessionPolicy()).thenReturn(mockPolicy);
+        when(tenantContextService.getTenantSettings(any())).thenReturn(mockSettings);
         
         UserSession session = sessionManagementService.createSession(testUser, request);
+        
+        // Verify session was created
+        assertNotNull(session);
         
         // Verify session has refresh token configuration
         verify(sessionRepository).save(argThat(s -> 
@@ -213,9 +227,9 @@ class AuthenticationRequirementsTest {
         googleIdentity.setStatus(LinkedIdentity.LinkStatus.ACTIVE);
         googleIdentity.setMergeEligible(true);
         googleIdentity.setMergeReversible(true);
+        googleIdentity.setVerified(true);
         
         assertTrue(googleIdentity.canMerge());
-        assertTrue(googleIdentity.canReverseMerge());
         
         // Test merging with audit trail
         googleIdentity.setMergedFromUserId("user456");
@@ -225,6 +239,7 @@ class AuthenticationRequirementsTest {
         assertTrue(googleIdentity.isMerged());
         assertNotNull(googleIdentity.getMergedFromUserId());
         assertNotNull(googleIdentity.getMergeOperationId());
+        assertTrue(googleIdentity.canReverseMerge());
         
         // Test reversible merge with expiration
         googleIdentity.setMergeExpiresAt(Instant.now().plus(Duration.ofDays(30)));
@@ -357,6 +372,8 @@ class AuthenticationRequirementsTest {
         device.setId(UUID.randomUUID());
         device.setUser(user);
         device.setDeviceFingerprint("device_fp_123");
+        device.setIpAddress("192.168.1.100");
+        device.setUserAgent("Mozilla/5.0 (Test Browser)");
         device.setStatus(UserDevice.DeviceStatus.VERIFIED);
         return device;
     }

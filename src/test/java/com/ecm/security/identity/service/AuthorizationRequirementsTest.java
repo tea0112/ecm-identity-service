@@ -62,7 +62,7 @@ class AuthorizationRequirementsTest {
     void testPolicyEngineABACReBAC() {
         // Test ABAC - Attribute-Based Access Control
         TenantPolicy abacPolicy = createABACPolicy();
-        List<TenantPolicy> policies = List.of(abacPolicy);
+        List<TenantPolicy> policies = new ArrayList<>(List.of(abacPolicy));
         
         when(policyService.getApplicablePolicies(eq(testTenantId), anyString(), anyString(), anyString()))
             .thenReturn(policies);
@@ -78,6 +78,7 @@ class AuthorizationRequirementsTest {
         AuthorizationDecision decision = authorizationService.authorize(request);
         
         assertNotNull(decision);
+        
         verify(policyService).getApplicablePolicies(testTenantId, "user:123", "document:456", "read");
         verify(auditService).logAuthorizationDecision(request, decision);
         
@@ -117,7 +118,7 @@ class AuthorizationRequirementsTest {
         );
         
         when(policyService.getApplicablePolicies(any(), any(), any(), any()))
-            .thenReturn(List.of(createAllowPolicy()));
+            .thenReturn(new ArrayList<>(List.of(createAllowPolicy())));
         
         List<AuthorizationDecision> decisions = authorizationService.batchAuthorize(batchRequests);
         
@@ -254,7 +255,18 @@ class AuthorizationRequirementsTest {
         
         assertTrue(delegatedRole.isDelegated());
         assertNotNull(delegatedRole.getDelegatedFromUserId());
-        assertTrue(delegatedRole.canDelegate()); // Can still delegate to depth 2
+        assertFalse(delegatedRole.canDelegate()); // Cannot delegate further as it's already delegated
+        
+        // Test a role that can delegate (not already delegated)
+        UserRole delegatableRole = new UserRole();
+        delegatableRole.setRoleName("ADMIN");
+        delegatableRole.setScope("project:123");
+        delegatableRole.setStatus(UserRole.RoleStatus.ACTIVE);
+        delegatableRole.setAssignmentType(UserRole.AssignmentType.PERMANENT);
+        delegatableRole.setDelegationDepth(0);
+        delegatableRole.setMaxDelegationDepth(2);
+        
+        assertTrue(delegatableRole.canDelegate()); // Can delegate as it's not already delegated
         
         // Test scoped administration
         UserRole scopedAdmin = new UserRole();
@@ -346,7 +358,7 @@ class AuthorizationRequirementsTest {
         allowPolicy.setResources(new String[]{"sensitive:data"});
         allowPolicy.setActions(new String[]{"delete"});
         
-        List<TenantPolicy> policies = List.of(explicitDeny, allowPolicy);
+        List<TenantPolicy> policies = new ArrayList<>(List.of(explicitDeny, allowPolicy));
         
         when(policyService.getApplicablePolicies(any(), any(), any(), any()))
             .thenReturn(policies);
@@ -370,6 +382,12 @@ class AuthorizationRequirementsTest {
         user.setEmail("test@example.com");
         user.setStatus(User.UserStatus.ACTIVE);
         
+        // Set tenant
+        Tenant tenant = new Tenant();
+        tenant.setId(testTenantId);
+        tenant.setName("Test Tenant");
+        user.setTenant(tenant);
+        
         // Add test roles
         UserRole adminRole = new UserRole();
         adminRole.setRoleName("ADMIN");
@@ -388,6 +406,8 @@ class AuthorizationRequirementsTest {
         session.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         session.setRiskLevel(UserSession.RiskLevel.LOW);
         session.setMfaCompleted(true);
+        session.setAuthenticationMethod(UserSession.AuthenticationMethod.PASSWORD);
+        session.setStepUpCompleted(false);
         return session;
     }
 

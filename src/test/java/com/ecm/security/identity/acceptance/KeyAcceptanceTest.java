@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,11 +44,19 @@ class KeyAcceptanceTest {
     @Mock
     private AuthorizationService authorizationService;
     
-    @Mock
     private SessionManagementService sessionManagementService;
     
     @Mock
     private PolicyService policyService;
+    
+    @Mock
+    private UserDeviceRepository deviceRepository;
+    
+    @Mock
+    private RiskAssessmentService riskAssessmentService;
+    
+    @Mock
+    private TenantContextService tenantContextService;
 
     private User testUser;
     private UserSession testSession;
@@ -58,6 +67,10 @@ class KeyAcceptanceTest {
         testTenantId = UUID.randomUUID();
         testUser = createTestUser();
         testSession = createTestSession();
+        
+        // Create real SessionManagementService with mocked dependencies
+        sessionManagementService = new SessionManagementService(
+            sessionRepository, deviceRepository, auditService, riskAssessmentService, tenantContextService);
     }
 
     @Test
@@ -69,7 +82,8 @@ class KeyAcceptanceTest {
         testSession.setExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
         
         when(sessionRepository.findActiveSessionsByUserId(testUser.getId()))
-            .thenReturn(List.of(testSession));
+            .thenReturn(new ArrayList<>(List.of(testSession)));
+        when(sessionRepository.saveAll(any())).thenReturn(List.of(testSession));
         
         // When: User is deleted (de-provisioned)
         Instant deletionTime = Instant.now();
@@ -78,9 +92,6 @@ class KeyAcceptanceTest {
         
         // Simulate session invalidation
         sessionManagementService.terminateAllUserSessions(testUser.getId(), "User deleted");
-        
-        // Then: All sessions must be terminated immediately
-        verify(sessionManagementService).terminateAllUserSessions(testUser.getId(), "User deleted");
         
         // Verify timing requirement (< 1 second)
         Instant afterDeletion = Instant.now();
