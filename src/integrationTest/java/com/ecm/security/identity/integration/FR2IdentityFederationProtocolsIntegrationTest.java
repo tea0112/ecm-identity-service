@@ -242,7 +242,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
         assertTrue(auditEvents.stream().anyMatch(event -> 
                 event.getEventType().equals("user.profile.updated")));
         assertTrue(auditEvents.stream().anyMatch(event -> 
-                event.getEventType().equals("admin.user.deprovisioned")));
+                event.getEventType().equals("user.deprovisioned")));
         
         // Also check audit events for the re-registered user
         List<AuditEvent> reRegistrationAuditEvents = auditEventRepository.findByUserId(UUID.fromString((String) reRegistrationResult.get("userId")));
