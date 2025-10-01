@@ -204,6 +204,7 @@ class MultiTenancyRequirementsTest {
         mergeTracker.setMergeOperationId(mergeOperationId);
         mergeTracker.setMergeReversible(true);
         mergeTracker.setMergeExpiresAt(Instant.now().plus(30, ChronoUnit.DAYS));
+        mergeTracker.setStatus(LinkedIdentity.LinkStatus.MERGED); // Set status to MERGED
         
         assertTrue(mergeTracker.canReverseMerge());
         assertNotNull(mergeTracker.getMergeOperationId());

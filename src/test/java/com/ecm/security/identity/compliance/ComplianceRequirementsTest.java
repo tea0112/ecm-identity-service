@@ -226,7 +226,7 @@ class ComplianceRequirementsTest {
         AuditEvent legalHoldEvent = new AuditEvent();
         legalHoldEvent.setUserId(testUser.getId());
         legalHoldEvent.setLegalHold(true);
-        legalHoldEvent.setRetentionUntil(Instant.now().plus(10, ChronoUnit.YEARS));
+        legalHoldEvent.setRetentionUntil(Instant.now().plus(365 * 10, ChronoUnit.DAYS));
         legalHoldEvent.setComplianceFlags(new String[]{"litigation_hold", "regulatory_investigation"});
         
         assertTrue(legalHoldEvent.getLegalHold());
@@ -482,7 +482,8 @@ class ComplianceRequirementsTest {
     private String calculateEventHash(AuditEvent event) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String data = event.getTimestamp() + "|" + event.getEventType() + "|" + event.getChainSequence();
+            String data = event.getTimestamp() + "|" + event.getEventType() + "|" + event.getChainSequence() + "|" + 
+                         (event.getDescription() != null ? event.getDescription() : "");
             return java.util.Base64.getEncoder().encodeToString(digest.digest(data.getBytes()));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
