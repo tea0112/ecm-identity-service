@@ -280,6 +280,7 @@ class FR4MultiTenancyIntegrationTest {
 
     @Test
     @DisplayName("FR4.2 - Tenant Lifecycle Management - Splitting and Merging")
+    @Commit
     void testTenantLifecycleManagementSplittingAndMerging() throws Exception {
         // Create parent tenant with multiple users and resources
         Tenant parentTenant = Tenant.builder()
@@ -453,7 +454,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> guestInvitationResponse = restTemplate.exchange(
-                baseUrl + "/tenant/guest-users/invite",
+                baseUrl + "/admin/tenant/guest-users/invite",
                 HttpMethod.POST,
                 new HttpEntity<>(guestInvitationRequest, tenant1Headers),
                 Map.class
@@ -470,6 +471,7 @@ class FR4MultiTenancyIntegrationTest {
 
         // Test guest user acceptance
         Map<String, Object> guestAcceptanceRequest = Map.of(
+                "hostTenantCode", tenant1.getTenantCode(),
                 "invitationId", invitationId,
                 "invitationToken", invitationToken,
                 "guestUserInfo", Map.of(
@@ -482,7 +484,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> guestAcceptanceResponse = restTemplate.postForEntity(
-                baseUrl + "/tenant/guest-users/accept",
+                baseUrl + "/admin/tenant/guest-users/accept",
                 guestAcceptanceRequest,
                 Map.class
         );
@@ -517,7 +519,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> resourceSharingResponse = restTemplate.exchange(
-                baseUrl + "/tenant/resources/share",
+                baseUrl + "/user/tenant/resources/share",
                 HttpMethod.POST,
                 new HttpEntity<>(resourceSharingRequest, tenant1Headers),
                 Map.class
@@ -544,7 +546,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> marketplaceAppResponse = restTemplate.exchange(
-                baseUrl + "/tenant/marketplace/install",
+                baseUrl + "/user/tenant/marketplace/install",
                 HttpMethod.POST,
                 new HttpEntity<>(marketplaceAppRequest, tenant1Headers),
                 Map.class
@@ -574,7 +576,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> consentResponse = restTemplate.exchange(
-                baseUrl + "/tenant/guest-users/consent",
+                baseUrl + "/user/tenant/guest-users/consent",
                 HttpMethod.POST,
                 new HttpEntity<>(consentRequest, guestHeaders),
                 Map.class
@@ -598,7 +600,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> accessValidationResponse = restTemplate.exchange(
-                baseUrl + "/tenant/guest-users/validate-access",
+                baseUrl + "/user/tenant/guest-users/validate-access",
                 HttpMethod.POST,
                 new HttpEntity<>(accessValidationRequest, guestHeaders),
                 Map.class

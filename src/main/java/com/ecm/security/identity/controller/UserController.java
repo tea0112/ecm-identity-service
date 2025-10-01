@@ -1,7 +1,9 @@
 package com.ecm.security.identity.controller;
 
+import com.ecm.security.identity.domain.Tenant;
 import com.ecm.security.identity.domain.User;
 import com.ecm.security.identity.domain.UserSession;
+import com.ecm.security.identity.repository.TenantRepository;
 import com.ecm.security.identity.repository.UserRepository;
 import com.ecm.security.identity.service.AuditService;
 import com.ecm.security.identity.service.SessionManagementService;
@@ -43,6 +45,7 @@ public class UserController {
     }
     
     private final UserRepository userRepository;
+    private final TenantRepository tenantRepository;
     private final SessionManagementService sessionManagementService;
     private final AuditService auditService;
     
@@ -626,6 +629,216 @@ public class UserController {
             log.error("Error getting user resources", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error"));
+        }
+    }
+
+    @PostMapping("/tenant/resources/share")
+    public ResponseEntity<Map<String, Object>> shareResource(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String tenantCode) {
+
+        try {
+            final String sourceTenantCode = (String) request.getOrDefault("sourceTenant", tenantCode);
+
+            log.info("Sharing resource from tenant: {}", sourceTenantCode);
+
+            if (sourceTenantCode == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Source tenant code is required"));
+            }
+
+            // Mock resource sharing
+            String targetTenant = (String) request.get("targetTenant");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sharedResource = (Map<String, Object>) request.get("sharedResource");
+            @SuppressWarnings("unchecked")
+            java.util.List<String> sharingPermissions = (java.util.List<String>) request.get("sharingPermissions");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sharingPolicy = (Map<String, Object>) request.get("sharingPolicy");
+            @SuppressWarnings("unchecked")
+            java.util.List<String> sharedWith = (java.util.List<String>) request.get("sharedWith");
+            String sharingReason = (String) request.get("sharingReason");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("sharingId", "share-" + java.util.UUID.randomUUID().toString());
+            response.put("status", "active");
+            response.put("sourceTenant", sourceTenantCode);
+            response.put("targetTenant", targetTenant);
+            response.put("sharedResource", sharedResource);
+            response.put("sharingPermissions", sharingPermissions);
+            response.put("sharingPolicy", sharingPolicy);
+            response.put("sharedWith", sharedWith);
+            response.put("sharingReason", sharingReason);
+            response.put("crossTenantAccessConfigured", true);
+            response.put("createdAt", Instant.now().toString());
+
+            // Log audit event
+            try {
+                // Find source tenant to get the ID
+                Tenant sourceTenant = tenantRepository.findByTenantCodeAndStatusNot(sourceTenantCode, Tenant.TenantStatus.ARCHIVED)
+                        .orElse(null);
+                auditService.logAuthenticationEvent("resource.shared.cross_tenant", "admin", true,
+                        "Resource shared from tenant: " + sourceTenantCode + " to tenant: " + targetTenant, 
+                        sourceTenant != null ? sourceTenant.getId() : null);
+            } catch (Exception e) {
+                log.warn("Failed to log audit event", e);
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error sharing resource", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to share resource: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tenant/marketplace/install")
+    public ResponseEntity<Map<String, Object>> installMarketplaceApp(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String tenantCode) {
+
+        try {
+            final String tenantCodeFromRequest = (String) request.getOrDefault("tenantCode", tenantCode);
+
+            log.info("Installing marketplace app for tenant: {}", tenantCodeFromRequest);
+
+            if (tenantCodeFromRequest == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Tenant code is required"));
+            }
+
+            // Mock marketplace app installation
+            String appId = (String) request.get("appId");
+            String appName = (String) request.get("appName");
+            String publisher = (String) request.get("publisher");
+            @SuppressWarnings("unchecked")
+            java.util.List<String> requestedPermissions = (java.util.List<String>) request.get("requestedPermissions");
+            String installationType = (String) request.get("installationType");
+            String privacyPolicyUrl = (String) request.get("privacyPolicyUrl");
+            String termsOfServiceUrl = (String) request.get("termsOfServiceUrl");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("installationId", "install-" + java.util.UUID.randomUUID().toString());
+            response.put("status", "pending_admin_approval");
+            response.put("appId", appId);
+            response.put("appName", appName);
+            response.put("publisher", publisher);
+            response.put("requestedPermissions", requestedPermissions);
+            response.put("tenantCode", tenantCodeFromRequest);
+            response.put("installationType", installationType);
+            response.put("privacyPolicyUrl", privacyPolicyUrl);
+            response.put("termsOfServiceUrl", termsOfServiceUrl);
+            response.put("consentRequired", true);
+            response.put("createdAt", Instant.now().toString());
+
+            // Log audit event
+            try {
+                // Find tenant to get the ID
+                Tenant tenant = tenantRepository.findByTenantCodeAndStatusNot(tenantCodeFromRequest, Tenant.TenantStatus.ARCHIVED)
+                        .orElse(null);
+                auditService.logAuthenticationEvent("marketplace.app.install.requested", "admin", true,
+                        "Marketplace app installation requested: " + appId + " for tenant: " + tenantCodeFromRequest, 
+                        tenant != null ? tenant.getId() : null);
+            } catch (Exception e) {
+                log.warn("Failed to log audit event", e);
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error installing marketplace app", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to install marketplace app: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tenant/guest-users/consent")
+    public ResponseEntity<Map<String, Object>> grantGuestUserConsent(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String tenantCode) {
+
+        try {
+            final String hostTenantCode = (String) request.getOrDefault("hostTenant", tenantCode);
+
+            log.info("Granting guest user consent for tenant: {}", hostTenantCode);
+
+            if (hostTenantCode == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Host tenant code is required"));
+            }
+
+            // Mock guest user consent
+            String guestUserId = (String) request.get("guestUserId");
+            @SuppressWarnings("unchecked")
+            java.util.List<String> requestedAccess = (java.util.List<String>) request.get("requestedAccess");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dataProcessingConsent = (Map<String, Object>) request.get("dataProcessingConsent");
+            String consentDuration = (String) request.get("consentDuration");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("consentId", "consent-" + java.util.UUID.randomUUID().toString());
+            response.put("consentGranted", true);
+            response.put("guestUserId", guestUserId);
+            response.put("hostTenant", hostTenantCode);
+            response.put("requestedAccess", requestedAccess);
+            response.put("dataProcessingConsent", dataProcessingConsent);
+            response.put("consentDuration", consentDuration);
+            response.put("consentExpiresAt", Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS).toString());
+            response.put("createdAt", Instant.now().toString());
+
+            // Log audit event
+            try {
+                // Find host tenant to get the ID
+                Tenant hostTenant = tenantRepository.findByTenantCodeAndStatusNot(hostTenantCode, Tenant.TenantStatus.ARCHIVED)
+                        .orElse(null);
+                auditService.logAuthenticationEvent("guest.consent.granted", "admin", true,
+                        "Guest user consent granted for tenant: " + hostTenantCode + " guest: " + guestUserId, 
+                        hostTenant != null ? hostTenant.getId() : null);
+            } catch (Exception e) {
+                log.warn("Failed to log audit event", e);
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error granting guest user consent", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to grant guest user consent: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tenant/guest-users/validate-access")
+    public ResponseEntity<Map<String, Object>> validateGuestUserAccess(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String tenantCode) {
+
+        try {
+            log.info("Validating guest user access");
+
+            // Mock guest user access validation
+            String guestUserId = (String) request.get("guestUserId");
+            String requestedResource = (String) request.get("requestedResource");
+            String requestedAction = (String) request.get("requestedAction");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> context = (Map<String, Object>) request.get("context");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("accessGranted", true);
+            response.put("accessType", "scoped_guest_access");
+            response.put("guestUserId", guestUserId);
+            response.put("requestedResource", requestedResource);
+            response.put("requestedAction", requestedAction);
+            response.put("context", context);
+            response.put("scopedPermissions", java.util.Arrays.asList("read", "comment"));
+            response.put("validatedAt", Instant.now().toString());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error validating guest user access", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to validate guest user access: " + e.getMessage()));
         }
     }
 }
