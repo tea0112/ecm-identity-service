@@ -21,7 +21,8 @@ import org.springframework.test.context.ActiveProfiles;
 @Configuration
 @EnableAutoConfiguration(exclude = {
     org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration.class
+    org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
 })
 @ComponentScan({"com.ecm.security.identity.controller", "com.ecm.security.identity.service"})
 @EntityScan("com.ecm.security.identity.domain")
