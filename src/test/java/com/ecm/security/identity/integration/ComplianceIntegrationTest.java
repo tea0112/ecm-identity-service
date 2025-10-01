@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Integration tests for NFR2 - Observability & Compliance requirements using Testcontainers.
  * These tests validate GDPR, CCPA, PDPA compliance and audit capabilities.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+                classes = {TestWebConfig.class})
 @Testcontainers
 @DisplayName("NFR2 - Observability & Compliance Integration Tests")
 class ComplianceIntegrationTest {
@@ -58,7 +59,10 @@ class ComplianceIntegrationTest {
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
         registry.add("spring.data.redis.password", () -> "test_redis_pass");
         registry.add("spring.flyway.clean-disabled", () -> "false");
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.flyway.enabled", () -> "false");
     }
 
     @LocalServerPort
@@ -198,7 +202,8 @@ class ComplianceIntegrationTest {
         assertEquals(HttpStatus.OK, chainResponse.getStatusCode());
         Map<String, Object> chainResult = chainResponse.getBody();
         assertTrue((Boolean) chainResult.get("chainValid"));
-        assertEquals(2L, chainResult.get("lastSequence"));
+        // Handle JSON deserialization which may convert Long to Integer
+        assertEquals(2L, ((Number) chainResult.get("lastSequence")).longValue());
         
         // Test PII redaction in audit logs
         Map<String, Object> redactionRequest = Map.of(

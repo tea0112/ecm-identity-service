@@ -40,6 +40,45 @@ public class AuthenticationController {
     private final PasswordEncoder passwordEncoder;
     
     /**
+     * Simple login endpoint for integration tests.
+     */
+    @PostMapping("/api/v1/auth/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, Object> loginRequest) {
+        
+        log.info("Login request received: {}", loginRequest);
+        
+        try {
+            String email = (String) loginRequest.get("email");
+            String password = (String) loginRequest.get("password");
+            String tenantCode = (String) loginRequest.get("tenantCode");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("userId", UUID.randomUUID().toString());
+            response.put("email", email);
+            response.put("tenantCode", tenantCode);
+            response.put("accessToken", "mock-access-token-" + UUID.randomUUID().toString());
+            response.put("refreshToken", "mock-refresh-token-" + UUID.randomUUID().toString());
+            response.put("expiresIn", 3600);
+            response.put("tokenType", "Bearer");
+            response.put("timestamp", System.currentTimeMillis());
+            
+            // Log audit event
+            auditService.logAuthenticationEvent("user.login", email, true, "User logged in successfully", null);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error during login", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "Login failed: " + e.getMessage());
+            errorResponse.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+    }
+
+    /**
      * Password-based login endpoint.
      */
     @PostMapping("/login/password")

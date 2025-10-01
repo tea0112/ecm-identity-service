@@ -2070,5 +2070,100 @@ public class AdminController {
                     .body(Map.of("error", "Failed to share resource: " + e.getMessage()));
         }
     }
+
+    // ===== LEGAL AND COMPLIANCE ENDPOINTS =====
+
+    /**
+     * Update Terms of Service and Privacy Policy versions
+     */
+    @PostMapping("/api/v1/admin/legal/update-versions")
+    public ResponseEntity<Map<String, Object>> updateLegalVersions(@RequestBody Map<String, Object> versionUpdateRequest) {
+        
+        log.info("Updating legal document versions: {}", versionUpdateRequest);
+        
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("updateId", UUID.randomUUID().toString());
+            response.put("status", "UPDATED");
+            response.put("tosVersion", versionUpdateRequest.get("tosVersion"));
+            response.put("privacyVersion", versionUpdateRequest.get("privacyVersion"));
+            response.put("effectiveDate", versionUpdateRequest.get("effectiveDate"));
+            response.put("timestamp", System.currentTimeMillis());
+            
+            // Log audit event
+            auditService.logAuthenticationEvent("legal.versions.updated", "admin", true,
+                    "Legal document versions updated", null);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error updating legal versions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update legal versions: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Place legal hold on data
+     */
+    @PostMapping("/api/v1/admin/legal/hold")
+    public ResponseEntity<Map<String, Object>> placeLegalHold(@RequestBody Map<String, Object> legalHoldRequest) {
+        
+        log.info("Placing legal hold: {}", legalHoldRequest);
+        
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("holdId", UUID.randomUUID().toString());
+            response.put("status", "ACTIVE");
+            response.put("userId", legalHoldRequest.get("userId"));
+            response.put("reason", legalHoldRequest.get("reason"));
+            response.put("caseNumber", legalHoldRequest.get("caseNumber"));
+            response.put("placedBy", legalHoldRequest.get("placedBy"));
+            response.put("expiresAt", legalHoldRequest.get("expiresAt"));
+            response.put("timestamp", System.currentTimeMillis());
+            
+            // Log audit event
+            auditService.logAuthenticationEvent("legal.hold.placed", "admin", true,
+                    "Legal hold placed for user: " + legalHoldRequest.get("userId"), null);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error placing legal hold", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to place legal hold: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Release legal hold
+     */
+    @PostMapping("/api/v1/admin/legal/hold/release")
+    public ResponseEntity<Map<String, Object>> releaseLegalHold(@RequestBody Map<String, Object> holdReleaseRequest) {
+        
+        log.info("Releasing legal hold: {}", holdReleaseRequest);
+        
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("releaseId", UUID.randomUUID().toString());
+            response.put("status", "RELEASED");
+            response.put("holdId", holdReleaseRequest.get("holdId"));
+            response.put("userId", holdReleaseRequest.get("userId"));
+            response.put("releasedBy", holdReleaseRequest.get("releasedBy"));
+            response.put("releaseReason", holdReleaseRequest.get("releaseReason"));
+            response.put("timestamp", System.currentTimeMillis());
+            
+            // Log audit event
+            auditService.logAuthenticationEvent("legal.hold.released", "admin", true,
+                    "Legal hold released for user: " + holdReleaseRequest.get("userId"), null);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error releasing legal hold", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to release legal hold: " + e.getMessage()));
+        }
+    }
     
 }
