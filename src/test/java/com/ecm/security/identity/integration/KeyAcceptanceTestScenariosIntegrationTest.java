@@ -147,7 +147,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
         );
 
         ResponseEntity<Map> deprovisionResponse = restTemplate.exchange(
-                baseUrl + "/admin/users/" + testUser.getId() + "/deprovision",
+                baseUrl + "/api/v1/admin/users/" + testUser.getId() + "/deprovision",
                 HttpMethod.POST,
                 new HttpEntity<>(deprovisionRequest, adminHeaders),
                 Map.class
@@ -216,7 +216,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
         );
 
         ResponseEntity<Map> impersonationResponse = restTemplate.exchange(
-                baseUrl + "/admin/impersonate/initiate",
+                baseUrl + "/api/v1/admin/impersonate/initiate",
                 HttpMethod.POST,
                 new HttpEntity<>(impersonationRequest, adminHeaders),
                 Map.class
@@ -274,7 +274,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify notification email was sent to user
         ResponseEntity<Map> notificationResponse = restTemplate.exchange(
-                baseUrl + "/admin/notifications/sent",
+                baseUrl + "/api/v1/admin/notifications/sent",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -320,7 +320,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         HttpHeaders adminHeaders = createAdminHeaders();
         ResponseEntity<Map> breakGlassResponse = restTemplate.exchange(
-                baseUrl + "/admin/break-glass/request",
+                baseUrl + "/api/v1/admin/break-glass/request",
                 HttpMethod.POST,
                 new HttpEntity<>(breakGlassRequest, adminHeaders),
                 Map.class
@@ -337,7 +337,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify high-severity alert was generated
         ResponseEntity<Map> alertResponse = restTemplate.exchange(
-                baseUrl + "/admin/security-alerts/recent",
+                baseUrl + "/api/v1/admin/security-alerts/recent",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -369,7 +369,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
         );
 
         ResponseEntity<Map> firstApprovalResponse = restTemplate.exchange(
-                baseUrl + "/admin/break-glass/approve",
+                baseUrl + "/api/v1/admin/break-glass/approve",
                 HttpMethod.POST,
                 new HttpEntity<>(firstApprovalRequest, adminHeaders),
                 Map.class
@@ -393,7 +393,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
         );
 
         ResponseEntity<Map> secondApprovalResponse = restTemplate.exchange(
-                baseUrl + "/admin/break-glass/approve",
+                baseUrl + "/api/v1/admin/break-glass/approve",
                 HttpMethod.POST,
                 new HttpEntity<>(secondApprovalRequest, adminHeaders),
                 Map.class
@@ -408,7 +408,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify break-glass activation generates additional high-severity alert
         ResponseEntity<Map> postActivationAlertResponse = restTemplate.exchange(
-                baseUrl + "/admin/security-alerts/recent",
+                baseUrl + "/api/v1/admin/security-alerts/recent",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -460,7 +460,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         HttpHeaders adminHeaders = createAdminHeaders();
         ResponseEntity<Map> compromiseResponse = restTemplate.exchange(
-                baseUrl + "/admin/security/key-compromise/report",
+                baseUrl + "/api/v1/admin/security/key-compromise/report",
                 HttpMethod.POST,
                 new HttpEntity<>(compromiseDetectionRequest, adminHeaders),
                 Map.class
@@ -476,7 +476,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify automated key rotation workflow is triggered
         ResponseEntity<Map> workflowStatusResponse = restTemplate.exchange(
-                baseUrl + "/admin/security/key-compromise/" + compromiseId + "/workflow-status",
+                baseUrl + "/api/v1/admin/security/key-compromise/" + compromiseId + "/workflow-status",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -537,7 +537,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify key rotation completed successfully
         ResponseEntity<Map> rotationStatusResponse = restTemplate.exchange(
-                baseUrl + "/admin/security/key-compromise/" + compromiseId + "/rotation-status",
+                baseUrl + "/api/v1/admin/security/key-compromise/" + compromiseId + "/rotation-status",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -584,7 +584,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         HttpHeaders adminHeaders = createAdminHeaders();
         ResponseEntity<Map> baselinePolicyResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies",
+                baseUrl + "/api/v1/admin/policies",
                 HttpMethod.POST,
                 new HttpEntity<>(baselinePolicyRequest, adminHeaders),
                 Map.class
@@ -602,7 +602,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
         );
 
         ResponseEntity<Map> knownGoodResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies/" + baselinePolicyId + "/mark-known-good",
+                baseUrl + "/api/v1/admin/policies/" + baselinePolicyId + "/mark-known-good",
                 HttpMethod.POST,
                 new HttpEntity<>(knownGoodRequest, adminHeaders),
                 Map.class
@@ -625,7 +625,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         Instant dangerousPolicyDeployTime = Instant.now();
         ResponseEntity<Map> dangerousPolicyResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies",
+                baseUrl + "/api/v1/admin/policies",
                 HttpMethod.POST,
                 new HttpEntity<>(dangerousPolicyRequest, adminHeaders),
                 Map.class
@@ -636,7 +636,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify dangerous policy is active
         ResponseEntity<Map> policyStatusResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies/" + dangerousPolicyId + "/status",
+                baseUrl + "/api/v1/admin/policies/" + dangerousPolicyId + "/status",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -656,7 +656,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         Instant rollbackStartTime = Instant.now();
         ResponseEntity<Map> rollbackResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies/" + dangerousPolicyId + "/emergency-rollback",
+                baseUrl + "/api/v1/admin/policies/" + dangerousPolicyId + "/emergency-rollback",
                 HttpMethod.POST,
                 new HttpEntity<>(emergencyRollbackRequest, adminHeaders),
                 Map.class
@@ -676,7 +676,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
         
         for (int i = 0; i < 60; i++) { // Check for up to 5 minutes (300 seconds / 5 second intervals)
             ResponseEntity<Map> rollbackStatusResponse = restTemplate.exchange(
-                    baseUrl + "/admin/policies/rollback/" + rollbackId + "/status",
+                    baseUrl + "/api/v1/admin/policies/rollback/" + rollbackId + "/status",
                     HttpMethod.GET,
                     new HttpEntity<>(adminHeaders),
                     Map.class
@@ -702,7 +702,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify baseline policy is active again
         ResponseEntity<Map> restoredPolicyResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies/" + baselinePolicyId + "/status",
+                baseUrl + "/api/v1/admin/policies/" + baselinePolicyId + "/status",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -713,7 +713,7 @@ class KeyAcceptanceTestScenariosIntegrationTest {
 
         // Verify dangerous policy is deactivated
         ResponseEntity<Map> deactivatedPolicyResponse = restTemplate.exchange(
-                baseUrl + "/admin/policies/" + dangerousPolicyId + "/status",
+                baseUrl + "/api/v1/admin/policies/" + dangerousPolicyId + "/status",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class

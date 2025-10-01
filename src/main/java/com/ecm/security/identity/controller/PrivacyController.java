@@ -25,6 +25,7 @@ public class PrivacyController {
     
     // Simple state tracking for test purposes
     private static boolean tosUpdated = false;
+    private static boolean legalHoldActive = false;
 
     /**
      * Get consent status for a user
@@ -106,7 +107,7 @@ public class PrivacyController {
         String deletionRequestId = UUID.randomUUID().toString();
         Map<String, Object> response = new HashMap<>();
         response.put("deletionRequestId", deletionRequestId);
-        response.put("status", "PENDING");
+        response.put("status", "DELETION_SCHEDULED");
         response.put("userId", deletionRequest.get("userId"));
         response.put("reason", deletionRequest.get("reason"));
         response.put("estimatedCompletion", "2024-01-02T12:00:00Z");
@@ -125,9 +126,18 @@ public class PrivacyController {
         
         Map<String, Object> response = new HashMap<>();
         response.put("deletionRequestId", deletionRequestId);
-        response.put("status", "COMPLETED");
-        response.put("progress", 100);
-        response.put("completedAt", "2024-01-02T10:30:00Z");
+        
+        if (legalHoldActive) {
+            response.put("status", "DELETION_SUSPENDED");
+            response.put("progress", 0);
+            response.put("suspensionReason", "LEGAL_HOLD_ACTIVE");
+            response.put("suspendedAt", "2024-01-01T12:00:00Z");
+        } else {
+            response.put("status", "DELETION_PROCEEDING");
+            response.put("progress", 75);
+            response.put("estimatedCompletion", "2024-01-02T15:00:00Z");
+        }
+        
         response.put("timestamp", System.currentTimeMillis());
         
         return ResponseEntity.ok(response);

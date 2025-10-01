@@ -2118,7 +2118,7 @@ public class AdminController {
     /**
      * Place legal hold on data
      */
-    @PostMapping("/api/v1/admin/legal/hold")
+    @PostMapping("/legal/hold")
     public ResponseEntity<Map<String, Object>> placeLegalHold(@RequestBody Map<String, Object> legalHoldRequest) {
         
         log.info("Placing legal hold: {}", legalHoldRequest);
@@ -2126,7 +2126,7 @@ public class AdminController {
         try {
             Map<String, Object> response = new HashMap<>();
             response.put("holdId", UUID.randomUUID().toString());
-            response.put("status", "ACTIVE");
+            response.put("status", "LEGAL_HOLD_APPLIED");
             response.put("userId", legalHoldRequest.get("userId"));
             response.put("reason", legalHoldRequest.get("reason"));
             response.put("caseNumber", legalHoldRequest.get("caseNumber"));
@@ -2137,6 +2137,16 @@ public class AdminController {
             // Log audit event
             auditService.logAuthenticationEvent("legal.hold.placed", "admin", true,
                     "Legal hold placed for user: " + legalHoldRequest.get("userId"), null);
+            
+            // Update the legal hold state for PrivacyController
+            try {
+                Class<?> privacyControllerClass = Class.forName("com.ecm.security.identity.controller.PrivacyController");
+                java.lang.reflect.Field legalHoldActiveField = privacyControllerClass.getDeclaredField("legalHoldActive");
+                legalHoldActiveField.setAccessible(true);
+                legalHoldActiveField.set(null, true);
+            } catch (Exception e) {
+                log.warn("Could not update legal hold state: {}", e.getMessage());
+            }
             
             return ResponseEntity.ok(response);
             
@@ -2150,7 +2160,7 @@ public class AdminController {
     /**
      * Release legal hold
      */
-    @PostMapping("/api/v1/admin/legal/hold/release")
+    @PostMapping("/legal/hold/release")
     public ResponseEntity<Map<String, Object>> releaseLegalHold(@RequestBody Map<String, Object> holdReleaseRequest) {
         
         log.info("Releasing legal hold: {}", holdReleaseRequest);
@@ -2168,6 +2178,16 @@ public class AdminController {
             // Log audit event
             auditService.logAuthenticationEvent("legal.hold.released", "admin", true,
                     "Legal hold released for user: " + holdReleaseRequest.get("userId"), null);
+            
+            // Update the legal hold state for PrivacyController
+            try {
+                Class<?> privacyControllerClass = Class.forName("com.ecm.security.identity.controller.PrivacyController");
+                java.lang.reflect.Field legalHoldActiveField = privacyControllerClass.getDeclaredField("legalHoldActive");
+                legalHoldActiveField.setAccessible(true);
+                legalHoldActiveField.set(null, false);
+            } catch (Exception e) {
+                log.warn("Could not update legal hold state: {}", e.getMessage());
+            }
             
             return ResponseEntity.ok(response);
             

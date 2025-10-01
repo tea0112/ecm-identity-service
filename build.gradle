@@ -83,3 +83,19 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// Integration test task
+task integrationTest(type: Test) {
+	useJUnitPlatform()
+	description = 'Runs integration tests'
+	group = 'verification'
+	
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	
+	// Include only integration tests
+	include '**/*IntegrationTest.class'
+	
+	// Set test profile
+	systemProperty 'spring.profiles.active', 'integration-test'
+}
+

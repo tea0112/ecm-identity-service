@@ -151,7 +151,7 @@ class FR4MultiTenancyIntegrationTest {
         tenant1Headers.set("X-Tenant-ID", tenant1.getTenantCode());
 
         ResponseEntity<Map> tenant1PolicyResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/policies",
+                baseUrl + "/api/v1/admin/tenant/policies",
                 HttpMethod.POST,
                 new HttpEntity<>(tenant1PolicyRequest, tenant1Headers),
                 Map.class
@@ -185,7 +185,7 @@ class FR4MultiTenancyIntegrationTest {
         tenant2Headers.set("X-Tenant-ID", tenant2.getTenantCode());
 
         ResponseEntity<Map> tenant2PolicyResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/policies",
+                baseUrl + "/api/v1/admin/tenant/policies",
                 HttpMethod.POST,
                 new HttpEntity<>(tenant2PolicyRequest, tenant2Headers),
                 Map.class
@@ -198,7 +198,7 @@ class FR4MultiTenancyIntegrationTest {
 
         // Test tenant isolation - tenant1 user cannot access tenant2 data
         ResponseEntity<Map> crossTenantAccessResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/policies",
+                baseUrl + "/api/v1/admin/tenant/policies",
                 HttpMethod.GET,
                 new HttpEntity<>(tenant2Headers), // tenant2 headers
                 Map.class
@@ -228,7 +228,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> keyGenerationResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/keys/generate",
+                baseUrl + "/api/v1/admin/tenant/keys/generate",
                 HttpMethod.POST,
                 new HttpEntity<>(keyGenerationRequest, tenant1Headers),
                 Map.class
@@ -251,7 +251,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> backupConfigResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/backup-config",
+                baseUrl + "/api/v1/admin/tenant/backup-config",
                 HttpMethod.PUT,
                 new HttpEntity<>(backupConfigRequest, tenant1Headers),
                 Map.class
@@ -289,7 +289,7 @@ class FR4MultiTenancyIntegrationTest {
         );
         
         ResponseEntity<Map> tenantCreationResponse = restTemplate.postForEntity(
-                baseUrl + "/admin/tenant",
+                baseUrl + "/api/v1/admin/tenant",
                 tenantCreationRequest,
                 Map.class
         );
@@ -326,7 +326,7 @@ class FR4MultiTenancyIntegrationTest {
 
         HttpHeaders parentHeaders = createTenantHeaders(parentTenant.getTenantCode());
         ResponseEntity<Map> resourceCreationResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/resources",
+                baseUrl + "/api/v1/admin/tenant/resources",
                 HttpMethod.POST,
                 new HttpEntity<>(resourceCreationRequest, parentHeaders),
                 Map.class
@@ -369,7 +369,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> tenantSplitResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/split",
+                baseUrl + "/api/v1/admin/tenant/split",
                 HttpMethod.POST,
                 new HttpEntity<>(tenantSplitRequest, parentHeaders),
                 Map.class
@@ -428,7 +428,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> tenantMergeResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/merge",
+                baseUrl + "/api/v1/admin/tenant/merge",
                 HttpMethod.POST,
                 new HttpEntity<>(tenantMergeRequest, parentHeaders),
                 Map.class
@@ -462,7 +462,7 @@ class FR4MultiTenancyIntegrationTest {
         );
         
         ResponseEntity<Map> tenant1CreationResponse = restTemplate.postForEntity(
-                baseUrl + "/admin/tenant",
+                baseUrl + "/api/v1/admin/tenant",
                 tenant1CreationRequest,
                 Map.class
         );
@@ -483,7 +483,7 @@ class FR4MultiTenancyIntegrationTest {
         );
         
         ResponseEntity<Map> tenant2CreationResponse = restTemplate.postForEntity(
-                baseUrl + "/admin/tenant",
+                baseUrl + "/api/v1/admin/tenant",
                 tenant2CreationRequest,
                 Map.class
         );
@@ -512,7 +512,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> guestInvitationResponse = restTemplate.exchange(
-                baseUrl + "/admin/tenant/guest-users/invite",
+                baseUrl + "/api/v1/admin/tenant/guest-users/invite",
                 HttpMethod.POST,
                 new HttpEntity<>(guestInvitationRequest, tenant1Headers),
                 Map.class
@@ -542,7 +542,7 @@ class FR4MultiTenancyIntegrationTest {
         );
 
         ResponseEntity<Map> guestAcceptanceResponse = restTemplate.postForEntity(
-                baseUrl + "/admin/tenant/guest-users/accept",
+                baseUrl + "/api/v1/admin/tenant/guest-users/accept",
                 guestAcceptanceRequest,
                 Map.class
         );
@@ -718,7 +718,7 @@ class FR4MultiTenancyIntegrationTest {
         );
         
         ResponseEntity<Map> userCreationResponse = restTemplate.postForEntity(
-                baseUrl + "/admin/tenant/user",
+                baseUrl + "/api/v1/admin/tenant/user",
                 userCreationRequest,
                 Map.class
         );

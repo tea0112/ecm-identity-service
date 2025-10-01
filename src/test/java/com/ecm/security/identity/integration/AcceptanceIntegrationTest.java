@@ -34,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Integration tests for Key Acceptance & Test Scenarios from requirements using Testcontainers.
  * These tests validate the critical security and operational requirements end-to-end.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+                classes = {TestWebConfig.class})
 @Testcontainers
 @DisplayName("Key Acceptance & Test Scenarios Integration Tests")
 class AcceptanceIntegrationTest {
@@ -191,7 +192,7 @@ class AcceptanceIntegrationTest {
         HttpEntity<Map<String, Object>> deletionEntity = new HttpEntity<>(deletionRequest, adminHeaders);
         
         ResponseEntity<Map> deletionResponse = restTemplate.exchange(
-            baseUrl + "/admin/users/delete",
+            baseUrl + "/api/v1/admin/users/delete",
             HttpMethod.POST,
             deletionEntity,
             Map.class
@@ -245,7 +246,7 @@ class AcceptanceIntegrationTest {
         HttpEntity<Map<String, Object>> impersonationEntity = new HttpEntity<>(impersonationRequest, adminHeaders);
         
         ResponseEntity<Map> impersonationResponse = restTemplate.exchange(
-            baseUrl + "/admin/impersonate/start",
+            baseUrl + "/api/v1/admin/impersonate/start",
             HttpMethod.POST,
             impersonationEntity,
             Map.class
@@ -297,7 +298,7 @@ class AcceptanceIntegrationTest {
         
         // Test notification was sent to user
         ResponseEntity<Map> notificationResponse = restTemplate.exchange(
-            baseUrl + "/admin/notifications/impersonation/" + impersonationSessionId,
+            baseUrl + "/api/v1/admin/notifications/impersonation/" + impersonationSessionId,
             HttpMethod.GET,
             new HttpEntity<>(adminHeaders),
             Map.class
@@ -312,7 +313,7 @@ class AcceptanceIntegrationTest {
         
         // End impersonation
         ResponseEntity<Map> endImpersonationResponse = restTemplate.exchange(
-            baseUrl + "/admin/impersonate/end",
+            baseUrl + "/api/v1/admin/impersonate/end",
             HttpMethod.POST,
             new HttpEntity<>(Map.of("sessionId", impersonationSessionId), adminHeaders),
             Map.class
@@ -377,7 +378,7 @@ class AcceptanceIntegrationTest {
         
         // Verify high-severity alert was generated
         ResponseEntity<Map> alertResponse = restTemplate.exchange(
-            baseUrl + "/admin/security/alerts/latest",
+            baseUrl + "/api/v1/admin/security/alerts/latest",
             HttpMethod.GET,
             new HttpEntity<>(createAuthHeaders(adminToken)),
             Map.class
@@ -406,7 +407,7 @@ class AcceptanceIntegrationTest {
             createAuthHeaders(adminToken));
         
         ResponseEntity<Map> firstApprovalResponse = restTemplate.exchange(
-            baseUrl + "/admin/break-glass/approve",
+            baseUrl + "/api/v1/admin/break-glass/approve",
             HttpMethod.POST,
             firstApprovalEntity,
             Map.class
@@ -427,7 +428,7 @@ class AcceptanceIntegrationTest {
         );
         
         ResponseEntity<Map> secondApprovalResponse = restTemplate.exchange(
-            baseUrl + "/admin/break-glass/approve",
+            baseUrl + "/api/v1/admin/break-glass/approve",
             HttpMethod.POST,
             new HttpEntity<>(secondApprovalRequest, 
                 createAuthHeaders(adminToken)),
@@ -505,7 +506,7 @@ class AcceptanceIntegrationTest {
         Instant compromiseDetectionTime = Instant.now();
         
         ResponseEntity<Map> compromiseResponse = restTemplate.exchange(
-            baseUrl + "/admin/security/key-compromise",
+            baseUrl + "/api/v1/admin/security/key-compromise",
             HttpMethod.POST,
             compromiseEntity,
             Map.class
@@ -525,7 +526,7 @@ class AcceptanceIntegrationTest {
             TimeUnit.SECONDS.sleep(10);
             
             ResponseEntity<Map> statusResponse = restTemplate.exchange(
-                baseUrl + "/admin/security/key-rotation/" + rotationOperationId + "/status",
+                baseUrl + "/api/v1/admin/security/key-rotation/" + rotationOperationId + "/status",
                 HttpMethod.GET,
                 new HttpEntity<>(adminHeaders),
                 Map.class
@@ -645,7 +646,7 @@ class AcceptanceIntegrationTest {
         HttpEntity<Map<String, Object>> updateEntity = new HttpEntity<>(problematicPolicyUpdate, adminHeaders);
         
         ResponseEntity<Map> updateResponse = restTemplate.exchange(
-            baseUrl + "/admin/policies/" + originalPolicy.getId() + "/update",
+            baseUrl + "/api/v1/admin/policies/" + originalPolicy.getId() + "/update",
             HttpMethod.PUT,
             updateEntity,
             Map.class
@@ -667,7 +668,7 @@ class AcceptanceIntegrationTest {
         HttpEntity<Map<String, Object>> rollbackEntity = new HttpEntity<>(emergencyRollbackRequest, adminHeaders);
         
         ResponseEntity<Map> rollbackResponse = restTemplate.exchange(
-            baseUrl + "/admin/policies/emergency-rollback",
+            baseUrl + "/api/v1/admin/policies/emergency-rollback",
             HttpMethod.POST,
             rollbackEntity,
             Map.class
@@ -686,7 +687,7 @@ class AcceptanceIntegrationTest {
         
         // Verify policy is back to original version
         ResponseEntity<Map> policyStatusResponse = restTemplate.exchange(
-            baseUrl + "/admin/policies/" + originalPolicy.getId(),
+            baseUrl + "/api/v1/admin/policies/" + originalPolicy.getId(),
             HttpMethod.GET,
             new HttpEntity<>(adminHeaders),
             Map.class
@@ -771,7 +772,7 @@ class AcceptanceIntegrationTest {
         HttpEntity<Map<String, Object>> revocationEntity = new HttpEntity<>(massRevocationRequest, adminHeaders);
         
         ResponseEntity<Map> revocationResponse = restTemplate.exchange(
-            baseUrl + "/admin/security/mass-revocation",
+            baseUrl + "/api/v1/admin/security/mass-revocation",
             HttpMethod.POST,
             revocationEntity,
             Map.class

@@ -185,7 +185,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
 
         // Test instantaneous de-provisioning
         ResponseEntity<Map> deProvisionResponse = restTemplate.exchange(
-                baseUrl + "/admin/users/" + userId + "/deprovision",
+                baseUrl + "/api/v1/admin/users/" + userId + "/deprovision",
                 HttpMethod.POST,
                 new HttpEntity<>(Map.of("reason", "User termination"), createAdminHeaders()),
                 Map.class
@@ -726,7 +726,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
 
         HttpHeaders adminHeaders = createAdminHeaders();
         ResponseEntity<Map> serviceAccountResponse = restTemplate.exchange(
-                baseUrl + "/admin/service-accounts",
+                baseUrl + "/api/v1/admin/service-accounts",
                 HttpMethod.POST,
                 new HttpEntity<>(serviceAccountRequest, adminHeaders),
                 Map.class
@@ -750,7 +750,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
         );
 
         ResponseEntity<Map> approvalResponse = restTemplate.exchange(
-                baseUrl + "/admin/approval-workflows/" + workflowId + "/approve",
+                baseUrl + "/api/v1/admin/approval-workflows/" + workflowId + "/approve",
                 HttpMethod.POST,
                 new HttpEntity<>(approvalRequest, adminHeaders),
                 Map.class
@@ -763,7 +763,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
 
         // Test service account credential generation
         ResponseEntity<Map> credentialResponse = restTemplate.exchange(
-                baseUrl + "/admin/service-accounts/" + serviceAccountId + "/credentials",
+                baseUrl + "/api/v1/admin/service-accounts/" + serviceAccountId + "/credentials",
                 HttpMethod.POST,
                 new HttpEntity<>(Map.of("credentialType", "client_secret"), adminHeaders),
                 Map.class
@@ -787,7 +787,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
         );
 
         ResponseEntity<Map> mtlsResponse = restTemplate.exchange(
-                baseUrl + "/admin/service-accounts/" + serviceAccountId + "/mtls-certificate",
+                baseUrl + "/api/v1/admin/service-accounts/" + serviceAccountId + "/mtls-certificate",
                 HttpMethod.POST,
                 new HttpEntity<>(mtlsRequest, adminHeaders),
                 Map.class
@@ -803,7 +803,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
 
         // Test service account rotation
         ResponseEntity<Map> rotationResponse = restTemplate.exchange(
-                baseUrl + "/admin/service-accounts/" + serviceAccountId + "/rotate",
+                baseUrl + "/api/v1/admin/service-accounts/" + serviceAccountId + "/rotate",
                 HttpMethod.POST,
                 new HttpEntity<>(Map.of("rotationType", "immediate"), adminHeaders),
                 Map.class
@@ -824,7 +824,7 @@ class FR2IdentityFederationProtocolsIntegrationTest {
         );
 
         ResponseEntity<Map> expirationResponse = restTemplate.exchange(
-                baseUrl + "/admin/service-accounts/" + serviceAccountId + "/expiration",
+                baseUrl + "/api/v1/admin/service-accounts/" + serviceAccountId + "/expiration",
                 HttpMethod.PUT,
                 new HttpEntity<>(expirationRequest, adminHeaders),
                 Map.class

@@ -254,7 +254,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         
         ResponseEntity<Map> consentStatusResponse = restTemplate.exchange(
-            baseUrl + "/privacy/consent/status",
+            baseUrl + "/api/v1/privacy/consent/status",
             HttpMethod.GET,
             entity,
             Map.class
@@ -278,7 +278,7 @@ class ComplianceIntegrationTest {
         );
         
         ResponseEntity<Map> tosUpdateResponse = restTemplate.postForEntity(
-            baseUrl + "/admin/legal/update-versions",
+            baseUrl + "/api/v1/admin/legal/update-versions",
             tosUpdateRequest,
             Map.class
         );
@@ -287,7 +287,7 @@ class ComplianceIntegrationTest {
         
         // Check consent status after update
         ResponseEntity<Map> updatedConsentResponse = restTemplate.exchange(
-            baseUrl + "/privacy/consent/status",
+            baseUrl + "/api/v1/privacy/consent/status",
             HttpMethod.GET,
             entity,
             Map.class
@@ -311,7 +311,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Map<String, Object>> newConsentEntity = new HttpEntity<>(newConsentRequest, headers);
         
         ResponseEntity<Map> newConsentResponse = restTemplate.exchange(
-            baseUrl + "/privacy/consent",
+            baseUrl + "/api/v1/privacy/consent",
             HttpMethod.POST,
             newConsentEntity,
             Map.class
@@ -344,7 +344,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Map<String, Object>> deletionEntity = new HttpEntity<>(deletionRequest, headers);
         
         ResponseEntity<Map> deletionResponse = restTemplate.exchange(
-            baseUrl + "/privacy/delete-account",
+            baseUrl + "/api/v1/privacy/delete-account",
             HttpMethod.POST,
             deletionEntity,
             Map.class
@@ -366,7 +366,7 @@ class ComplianceIntegrationTest {
         );
         
         ResponseEntity<Map> legalHoldResponse = restTemplate.postForEntity(
-            baseUrl + "/admin/legal/hold",
+            baseUrl + "/api/v1/admin/legal/hold",
             legalHoldRequest,
             Map.class
         );
@@ -377,7 +377,7 @@ class ComplianceIntegrationTest {
         
         // Check deletion status with legal hold
         ResponseEntity<Map> deletionStatusResponse = restTemplate.exchange(
-            baseUrl + "/privacy/deletion-status/" + deletionRequestId,
+            baseUrl + "/api/v1/privacy/deletion-status/" + deletionRequestId,
             HttpMethod.GET,
             new HttpEntity<>(headers),
             Map.class
@@ -396,7 +396,7 @@ class ComplianceIntegrationTest {
         );
         
         ResponseEntity<Map> holdReleaseResponse = restTemplate.postForEntity(
-            baseUrl + "/admin/legal/hold/release",
+            baseUrl + "/api/v1/admin/legal/hold/release",
             holdReleaseRequest,
             Map.class
         );
@@ -405,7 +405,7 @@ class ComplianceIntegrationTest {
         
         // Check final deletion status
         ResponseEntity<Map> finalStatusResponse = restTemplate.exchange(
-            baseUrl + "/privacy/deletion-status/" + deletionRequestId,
+            baseUrl + "/api/v1/privacy/deletion-status/" + deletionRequestId,
             HttpMethod.GET,
             new HttpEntity<>(headers),
             Map.class
@@ -425,7 +425,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Void> euEntity = new HttpEntity<>(euHeaders);
         
         ResponseEntity<Map> gdprPolicyResponse = restTemplate.exchange(
-            baseUrl + "/privacy/applicable-policies",
+            baseUrl + "/api/v1/privacy/applicable-policies",
             HttpMethod.GET,
             euEntity,
             Map.class
@@ -445,7 +445,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Void> caEntity = new HttpEntity<>(caHeaders);
         
         ResponseEntity<Map> ccpaPolicyResponse = restTemplate.exchange(
-            baseUrl + "/privacy/applicable-policies",
+            baseUrl + "/api/v1/privacy/applicable-policies",
             HttpMethod.GET,
             caEntity,
             Map.class
@@ -465,7 +465,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Void> sgEntity = new HttpEntity<>(sgHeaders);
         
         ResponseEntity<Map> pdpaPolicyResponse = restTemplate.exchange(
-            baseUrl + "/privacy/applicable-policies",
+            baseUrl + "/api/v1/privacy/applicable-policies",
             HttpMethod.GET,
             sgEntity,
             Map.class
@@ -487,7 +487,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Map<String, Object>> doNotSellEntity = new HttpEntity<>(doNotSellRequest, caHeaders);
         
         ResponseEntity<Map> doNotSellResponse = restTemplate.exchange(
-            baseUrl + "/privacy/ccpa/do-not-sell",
+            baseUrl + "/api/v1/privacy/ccpa/do-not-sell",
             HttpMethod.POST,
             doNotSellEntity,
             Map.class
@@ -499,7 +499,7 @@ class ComplianceIntegrationTest {
         
         // Test jurisdiction-specific data export formats
         ResponseEntity<Map> euExportResponse = restTemplate.exchange(
-            baseUrl + "/privacy/export",
+            baseUrl + "/api/v1/privacy/export",
             HttpMethod.POST,
             new HttpEntity<>(Map.of("format", "GDPR_COMPLIANT"), euHeaders),
             Map.class
@@ -618,7 +618,7 @@ class ComplianceIntegrationTest {
         HttpEntity<Map<String, Object>> exportEntity = new HttpEntity<>(exportRequest, euHeaders);
         
         ResponseEntity<Map> exportResponse = restTemplate.exchange(
-            baseUrl + "/privacy/export",
+            baseUrl + "/api/v1/privacy/export",
             HttpMethod.POST,
             exportEntity,
             Map.class
@@ -632,7 +632,7 @@ class ComplianceIntegrationTest {
         
         // Check export status
         ResponseEntity<Map> statusResponse = restTemplate.exchange(
-            baseUrl + "/privacy/export/" + exportId + "/status",
+            baseUrl + "/api/v1/privacy/export/" + exportId + "/status",
             HttpMethod.GET,
             new HttpEntity<>(euHeaders),
             Map.class
@@ -644,7 +644,7 @@ class ComplianceIntegrationTest {
         
         // Simulate export completion and retrieve
         ResponseEntity<Map> downloadResponse = restTemplate.exchange(
-            baseUrl + "/privacy/export/" + exportId + "/download",
+            baseUrl + "/api/v1/privacy/export/" + exportId + "/download",
             HttpMethod.GET,
             new HttpEntity<>(euHeaders),
             Map.class

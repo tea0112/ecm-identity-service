@@ -445,7 +445,7 @@ class FR3AuthorizationAccessControlIntegrationTest {
         );
 
         ResponseEntity<Map> revocationResponse = restTemplate.exchange(
-                baseUrl + "/admin/permissions/revoke",
+                baseUrl + "/api/v1/admin/permissions/revoke",
                 HttpMethod.POST,
                 new HttpEntity<>(revocationRequest, adminHeaders),
                 Map.class
@@ -737,7 +737,7 @@ class FR3AuthorizationAccessControlIntegrationTest {
 
         HttpHeaders adminHeaders = createAdminHeaders();
         ResponseEntity<Map> scopedAdminResponse = restTemplate.exchange(
-                baseUrl + "/admin/scoped-administrators/create",
+                baseUrl + "/api/v1/admin/scoped-administrators/create",
                 HttpMethod.POST,
                 new HttpEntity<>(scopedAdminRequest, adminHeaders),
                 Map.class

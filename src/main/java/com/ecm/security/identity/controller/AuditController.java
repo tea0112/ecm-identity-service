@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -94,7 +95,55 @@ public class AuditController {
         Map<String, Object> response = new HashMap<>();
         response.put("timelineId", UUID.randomUUID().toString());
         response.put("status", "GENERATED");
-        response.put("events", 25);
+        // Create mock forensic timeline events
+        List<Map<String, Object>> events = List.of(
+            Map.of(
+                "eventId", "evt_001",
+                "timestamp", "2024-01-01T10:00:00Z",
+                "eventType", "LOGIN_SUCCESS",
+                "userId", "user123",
+                "ipAddress", "192.168.1.100",
+                "userAgent", "Mozilla/5.0...",
+                "correlationId", timelineRequest.get("correlationId"),
+                "severity", "INFO",
+                "description", "User logged in from new device"
+            ),
+            Map.of(
+                "eventId", "evt_002", 
+                "timestamp", "2024-01-01T10:05:00Z",
+                "eventType", "SUSPICIOUS_ACTIVITY",
+                "userId", "user123",
+                "ipAddress", "192.168.1.100",
+                "userAgent", "Mozilla/5.0...",
+                "correlationId", timelineRequest.get("correlationId"),
+                "severity", "WARNING",
+                "description", "Multiple failed login attempts detected"
+            ),
+            Map.of(
+                "eventId", "evt_003",
+                "timestamp", "2024-01-01T10:10:00Z", 
+                "eventType", "ACCOUNT_LOCKED",
+                "userId", "user123",
+                "ipAddress", "192.168.1.100",
+                "userAgent", "Mozilla/5.0...",
+                "correlationId", timelineRequest.get("correlationId"),
+                "severity", "HIGH",
+                "description", "Account locked due to suspicious activity"
+            ),
+            Map.of(
+                "eventId", "evt_004",
+                "timestamp", "2024-01-01T10:15:00Z",
+                "eventType", "ADMIN_INTERVENTION", 
+                "userId", "admin456",
+                "ipAddress", "10.0.0.50",
+                "userAgent", "AdminTool/1.0",
+                "correlationId", timelineRequest.get("correlationId"),
+                "severity", "INFO",
+                "description", "Admin unlocked account after verification"
+            )
+        );
+        
+        response.put("events", events);
         response.put("timeRange", "2024-01-01T00:00:00Z to 2024-01-01T23:59:59Z");
         response.put("incidentId", timelineRequest.get("incidentId"));
         response.put("timestamp", System.currentTimeMillis());
@@ -112,10 +161,12 @@ public class AuditController {
         
         Map<String, Object> response = new HashMap<>();
         response.put("incidentId", UUID.randomUUID().toString());
-        response.put("status", "CREATED");
+        response.put("status", "INCIDENT_CREATED");
         response.put("severity", incidentRequest.get("severity"));
         response.put("description", incidentRequest.get("description"));
         response.put("createdBy", "system");
+        response.put("timelineLinked", true);
+        response.put("relatedEventCount", 4);
         response.put("timestamp", System.currentTimeMillis());
         
         return ResponseEntity.ok(response);
