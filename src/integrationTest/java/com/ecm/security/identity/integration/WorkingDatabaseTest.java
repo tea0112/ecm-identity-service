@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, 
                 classes = {TestDataJpaConfig.class})
 @Testcontainers
+@org.springframework.test.context.ActiveProfiles("integration-test")
 @TestPropertySource(properties = {
     "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration",
     "spring.datasource.driver-class-name=org.postgresql.Driver",
