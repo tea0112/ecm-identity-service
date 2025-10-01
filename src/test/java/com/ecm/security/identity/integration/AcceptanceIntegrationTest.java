@@ -42,7 +42,7 @@ class AcceptanceIntegrationTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("ecm_identity_test")
+            .withDatabaseName("ecm_identity_acceptance_test")
             .withUsername("test_user")
             .withPassword("test_pass");
 

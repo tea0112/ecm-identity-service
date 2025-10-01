@@ -36,7 +36,7 @@ class NFR1SecurityHardeningIntegrationTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("ecm_identity_test")
+            .withDatabaseName("ecm_identity_nfr1_test")
             .withUsername("test")
             .withPassword("test");
 

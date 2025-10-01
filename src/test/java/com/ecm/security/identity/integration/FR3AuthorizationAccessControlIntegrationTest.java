@@ -38,7 +38,7 @@ class FR3AuthorizationAccessControlIntegrationTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("ecm_identity_test")
+            .withDatabaseName("ecm_identity_fr3_test")
             .withUsername("test")
             .withPassword("test");
 

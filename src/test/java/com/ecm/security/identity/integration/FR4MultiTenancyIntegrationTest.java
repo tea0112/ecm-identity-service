@@ -37,7 +37,7 @@ class FR4MultiTenancyIntegrationTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("ecm_identity_test")
+            .withDatabaseName("ecm_identity_fr4_test")
             .withUsername("test")
             .withPassword("test");
 
