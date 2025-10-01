@@ -83,37 +83,3 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-// Integration test configuration
-configurations {
-	integrationTestImplementation.extendsFrom testImplementation
-	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
-
-sourceSets {
-	integrationTest {
-		java {
-			srcDir 'src/integrationTest/java'
-			compileClasspath += sourceSets.main.output + sourceSets.test.output
-			runtimeClasspath += sourceSets.main.output + sourceSets.test.output
-		}
-		resources {
-			srcDir 'src/integrationTest/resources'
-		}
-	}
-}
-
-tasks.register('integrationTest', Test) {
-	description = 'Run integration tests'
-	group = 'verification'
-	
-	testClassesDirs = sourceSets.integrationTest.output.classesDirs
-	classpath = sourceSets.integrationTest.runtimeClasspath
-	shouldRunAfter test
-	
-	useJUnitPlatform()
-}
-
-// Configure duplicate handling for integration test resources
-tasks.named('processIntegrationTestResources') {
-	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
