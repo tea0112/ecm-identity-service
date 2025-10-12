@@ -1,35 +1,44 @@
-# Database Migration Structure
+# Database Migration Structure (Sprint-Based)
 
 ## Directory Organization
 
 ```
 /db/changelog/
 ├── changes/                    # Schema changes (environment-agnostic)
-│   └── v1.0/
-│       ├── 0001-create-sample-users-table.sql
-│       ├── 0002-create-sample-roles-table.sql
-│       └── 0003-create-sample-user-roles-table.sql
+│   ├── sprint-01/             # Sprint 01 schema changes
+│   │   ├── 0001-create-sample-users-table.sql
+│   │   ├── 0002-create-sample-roles-table.sql
+│   │   └── 0003-create-sample-user-roles-table.sql
+│   └── sprint-02/             # Sprint 02 schema changes (future)
 │
 ├── data/
 │   ├── master/                 # Master/Reference data (runs in ALL environments)
-│   │   └── v1.0/
-│   │       └── 0001-seed-master-roles.sql
+│   │   ├── sprint-01/
+│   │   │   └── 0001-seed-master-roles.sql
+│   │   └── sprint-02/         # Future sprints
 │   │
 │   ├── dev/                    # Dev-specific test data (context:dev)
-│   │   └── v1.0/
-│   │       ├── 0001-seed-dev-test-data.sql
-│   │       └── 0002-seed-dev-users.sql
+│   │   ├── sprint-01/
+│   │   │   ├── 0001-seed-dev-test-data.sql
+│   │   │   └── 0002-seed-dev-users.sql
+│   │   └── sprint-02/         # Future sprints
 │   │
 │   ├── uat/                    # UAT-specific test data (context:uat)
-│   │   └── v1.0/
-│   │       ├── 0001-seed-uat-test-data.sql
-│   │       └── 0002-seed-uat-users.sql
+│   │   ├── sprint-01/
+│   │   │   ├── 0001-seed-uat-test-data.sql
+│   │   │   └── 0002-seed-uat-users.sql
+│   │   └── sprint-02/         # Future sprints
 │   │
 │   └── prod/                   # Prod-specific initial data (context:prod)
-│       └── v1.0/
-│           └── 0001-seed-prod-initial-data.sql
+│       ├── sprint-01/
+│       │   └── 0001-seed-prod-initial-data.sql
+│       └── sprint-02/         # Future sprints
 │
-└── db.changelog-master.xml     # Master changelog (XML format for includes)
+├── versions/                   # Sprint-specific changelog files
+│   ├── db.changelog-sprint-01.xml
+│   └── db.changelog-sprint-02.xml  # Future sprints
+│
+└── db.changelog-master.xml     # Master changelog (includes all sprints)
 ```
 
 ## Execution Order
@@ -74,16 +83,16 @@ After running `./gradlew update`, the following master roles are available in **
 
 ## Adding New Master Data
 
-1. Create file in `/data/master/v1.0/`
+1. Create file in `/data/master/sprint-XX/` (where XX is current sprint number)
 2. **Do NOT add context** to the changeset
-3. Add to `db.changelog-master.xml` after schema changes
+3. Add to `db.changelog-sprint-XX.xml` after schema changes
 4. Run `./gradlew update` - will execute in all environments
 
 Example:
 ```sql
 --liquibase formatted sql
 
---changeset tea0112:v1.0-0002-seed-countries
+--changeset tea0112:sprint-02-0002-seed-countries
 --comment: Insert country master data for all environments
 INSERT INTO countries (code, name) VALUES 
     ('US', 'United States'),
@@ -91,31 +100,73 @@ INSERT INTO countries (code, name) VALUES
 ON CONFLICT (code) DO NOTHING;
 ```
 
+## Sprint-Based Development Workflow
+
+### Adding Changes for a New Sprint
+
+When starting Sprint 02, create the following structure:
+
+```bash
+# 1. Create sprint directories
+mkdir -p db/changelog/changes/sprint-02
+mkdir -p db/changelog/data/master/sprint-02
+mkdir -p db/changelog/data/dev/sprint-02
+mkdir -p db/changelog/data/uat/sprint-02
+mkdir -p db/changelog/data/prod/sprint-02
+
+# 2. Add your migration files
+# db/changelog/changes/sprint-02/0001-add-email-verification.sql
+# db/changelog/data/master/sprint-02/0001-seed-verification-statuses.sql
+
+# 3. Create sprint changelog
+# db/changelog/versions/db.changelog-sprint-02.xml
+
+# 4. Include in master changelog
+# Uncomment the sprint-02 include in db.changelog-master.xml
+```
+
+### Sprint Changelog Example (db.changelog-sprint-02.xml)
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Sprint 02: Email Verification Feature -->
+    <include file="db/changelog/changes/sprint-02/0001-add-email-verification.sql"/>
+    <include file="db/changelog/data/master/sprint-02/0001-seed-verification-statuses.sql"/>
+    <include file="db/changelog/data/dev/sprint-02/0001-seed-dev-test-accounts.sql"/>
+</databaseChangeLog>
+```
+
 ## Progressive Deployment (Dev → UAT → Prod)
 
 The structure supports progressive deployment across environments:
 
 ```bash
-# Sprint 5: Deploy to Dev
+# Sprint 02: Deploy to Dev
 cd dev-environment
 ./gradlew update -Pcontexts=dev
-# ✅ Schema changes applied
-# ✅ Master data applied
-# ✅ Dev test data applied
+# ✅ Sprint 01 changes applied (if not already)
+# ✅ Sprint 02 schema changes applied
+# ✅ Sprint 02 master data applied
+# ✅ Sprint 02 dev test data applied
 
 # After testing → Deploy to UAT
 cd uat-environment
 ./gradlew update -Pcontexts=uat
-# ✅ Same schema changes applied
-# ✅ Same master data applied
-# ✅ UAT test data applied
+# ✅ Same sprint 02 schema changes applied
+# ✅ Same sprint 02 master data applied
+# ✅ Sprint 02 UAT test data applied
 
 # After UAT approval → Deploy to Prod
 cd prod-environment
 ./gradlew update -Pcontexts=prod
-# ✅ Same schema changes applied
-# ✅ Same master data applied
-# ✅ Prod initial data applied
+# ✅ Same sprint 02 schema changes applied
+# ✅ Same sprint 02 master data applied
+# ✅ Sprint 02 prod initial data applied
 ```
 
 **Key Point:** The **same migration files** flow through all environments. You don't create separate files per environment - the progressive deployment happens naturally as you run migrations in each environment sequentially.
@@ -136,7 +187,7 @@ Data **MUST be identical** across all environments (dev, uat, prod)
 **Rule:** No `context` attribute - runs in ALL environments
 
 ```sql
---changeset tea0112:v1.5-0001-seed-status-codes
+--changeset tea0112:sprint-05-0001-seed-status-codes
 -- No context = runs everywhere
 INSERT INTO status_codes (code, name) VALUES 
     ('ACTIVE', 'Active'),
@@ -156,7 +207,7 @@ Data is **environment-specific** and should differ
 **Rule:** Has `context:dev/uat/prod` - runs only in matching environment
 
 ```sql
---changeset tea0112:v1.0-0001-seed-dev-users context:dev
+--changeset tea0112:sprint-01-0001-seed-dev-users context:dev
 -- Only runs in dev
 INSERT INTO users (username, email) VALUES 
     ('test_user', 'test@example.com');
@@ -167,18 +218,34 @@ INSERT INTO users (username, email) VALUES
 ```
 Is this data identical in all environments?
 │
-├─ YES → /data/master/v1.X/
+├─ YES → /data/master/sprint-XX/
 │         (Countries, roles, status codes, etc.)
 │
-└─ NO → /data/{env}/v1.X/
+└─ NO → /data/{env}/sprint-XX/
          (Test users, sample data, etc.)
 ```
 
 ## Key Benefits
 
+✅ **Sprint traceability** - Clear visibility of which DB changes belong to each sprint  
 ✅ **Schema consistency** - All environments have identical structure  
 ✅ **Master data consistency** - Reference data same everywhere  
 ✅ **Environment flexibility** - Each environment can have custom test data  
 ✅ **Context filtering** - Liquibase automatically runs correct data per environment  
 ✅ **Progressive deployment** - Same migration files flow dev → uat → prod  
-✅ **Clear organization** - Easy to understand what runs where
+✅ **Reduced merge conflicts** - Each sprint works in isolated folders  
+✅ **Sprint rollback** - Can identify and rollback entire sprint if needed  
+✅ **Clear organization** - Easy to understand what runs where and when  
+✅ **Agile-friendly** - Aligns perfectly with sprint-based development workflow
+
+## Sprint-Based Benefits for Scrum Teams
+
+| Benefit | Description |
+|---------|-------------|
+| **Sprint Planning** | Easy to estimate DB changes - see all changes in sprint folder |
+| **Code Reviews** | Group migrations by sprint - easier to review related changes |
+| **Release Management** | Bundle sprint folders for release - clear what's included |
+| **Sprint Retrospective** | Review DB changes made during sprint |
+| **Rollback Strategy** | If sprint needs rollback, all migrations are in one folder |
+| **Team Collaboration** | Different developers work in different sprint folders = less conflicts |
+| **Documentation** | Sprint folders serve as historical record of DB evolution |
