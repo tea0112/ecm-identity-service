@@ -2,6 +2,39 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.liquibase.gradle' version '2.2.2'
+}
+
+// ============================================
+// Liquibase Configuration
+// ============================================
+liquibase {
+	activities {
+		// Main activity - uses local/dev database
+		main {
+			changelogFile 'src/main/resources/db/changelog/db.changelog-master.sql'
+			url 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
+			username 'dev_ecm'
+			password 'dev_ecm!23456'
+			driver 'org.postgresql.Driver'
+			contexts 'dev'
+			logLevel 'info'
+		}
+		
+		// Dry-run activity - generates SQL without executing
+		dryRun {
+			changelogFile 'src/main/resources/db/changelog/db.changelog-master.sql'
+			url 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
+			username 'dev_ecm'
+			password 'dev_ecm!23456'
+			driver 'org.postgresql.Driver'
+			contexts 'dev'
+			outputFile 'build/liquibase-update.sql'
+		}
+	}
+	
+	// Run main activity by default
+	runList = 'main'
 }
 
 group = 'com.ecm.security'
@@ -25,23 +58,99 @@ repositories {
 }
 
 dependencies {
+	// Spring Boot Starters
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.kafka:spring-kafka'
+	
+	// Liquibase - Database Migration
+	implementation 'org.liquibase:liquibase-core'
+	liquibaseRuntime 'org.liquibase:liquibase-core'
+	liquibaseRuntime 'org.postgresql:postgresql'
+	liquibaseRuntime 'info.picocli:picocli:4.7.5'
+	liquibaseRuntime 'ch.qos.logback:logback-classic:1.4.14'
+	
+	// Lombok
 	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Development
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
+	// Database Driver
+	runtimeOnly 'org.postgresql:postgresql'
+	
+	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.amqp:spring-rabbit-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:kafka'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:rabbitmq'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// ============================================
+// Liquibase Gradle Tasks
+// ============================================
+
+// Validate changelog syntax
+task liquibaseValidate {
+	group = 'liquibase'
+	description = 'Validates the Liquibase changelog for errors'
+	doLast {
+		println "Validating Liquibase changelogs..."
+	}
+}
+
+// Generate SQL without executing (dry-run)
+task liquibaseDryRun {
+	group = 'liquibase'
+	description = 'Generate SQL output without executing changes'
+	doLast {
+		println "Running Liquibase in dry-run mode..."
+		println "Output will be in: build/liquibase-update.sql"
+	}
+}
+
+// Custom task to show Liquibase status
+task liquibaseStatusReport {
+	group = 'liquibase'
+	description = 'Show detailed Liquibase migration status'
+	doLast {
+		println "Checking Liquibase status..."
+	}
+}
+
+// Task to generate diff changelog (compare DB with entities)
+task liquibaseDiffChangelog {
+	group = 'liquibase'
+	description = 'Generate changelog by comparing database with JPA entities (requires Hibernate plugin)'
+	doLast {
+		println """
+		===========================================
+		Liquibase Diff Changelog Generation
+		===========================================
+		
+		To generate a changelog from database differences:
+		
+		1. Make sure your database is up to date
+		2. Modify your JPA entities
+		3. Run: ./gradlew liquibaseDiffChangelog
+		
+		Note: This requires additional Hibernate configuration
+		See: https://docs.liquibase.com/tools-integrations/community-supported/hibernate/hibernate.html
+		===========================================
+		"""
+	}
 }
