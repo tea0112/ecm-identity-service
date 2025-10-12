@@ -10,33 +10,81 @@ plugins {
 // ============================================
 liquibase {
 	activities {
-		// Main activity - uses local/dev database
-		main {
+		// All activities use the same environment variable names
+		// Set different .env files or environment variables per deployment target
+		
+		// Local environment (localhost development)
+		local {
 			changelogFile 'db/changelog/db.changelog-master.xml'
-			url 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
-			username 'dev_ecm'
-			password 'dev_ecm!23456'
+			url System.getenv('DB_URL') ?: 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
+			username System.getenv('DB_USERNAME') ?: 'dev_ecm'
+			password System.getenv('DB_PASSWORD') ?: 'dev_ecm!23456'
 			driver 'org.postgresql.Driver'
 			contexts 'dev'
 			logLevel 'info'
 			searchPath 'src/main/resources'
+			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
+			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
 		}
 		
-		// Dry-run activity - generates SQL without executing
+		// Development environment (shared dev server)
+		dev {
+			changelogFile 'db/changelog/db.changelog-master.xml'
+			url System.getenv('DB_URL') ?: 'jdbc:postgresql://dev-server:5432/ecm_identity_dev'
+			username System.getenv('DB_USERNAME') ?: 'dev_ecm'
+			password System.getenv('DB_PASSWORD')
+			driver 'org.postgresql.Driver'
+			contexts 'dev'
+			logLevel 'info'
+			searchPath 'src/main/resources'
+			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
+			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
+		}
+		
+		// UAT environment
+		uat {
+			changelogFile 'db/changelog/db.changelog-master.xml'
+			url System.getenv('DB_URL') ?: 'jdbc:postgresql://uat-server:5432/ecm_identity_uat'
+			username System.getenv('DB_USERNAME') ?: 'uat_ecm'
+			password System.getenv('DB_PASSWORD')
+			driver 'org.postgresql.Driver'
+			contexts 'uat'
+			logLevel 'info'
+			searchPath 'src/main/resources'
+			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'uat_ecm'
+			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'uat_ecm'
+		}
+		
+		// Production environment
+		prod {
+			changelogFile 'db/changelog/db.changelog-master.xml'
+			url System.getenv('DB_URL') ?: 'jdbc:postgresql://prod-server:5432/ecm_identity_prod'
+			username System.getenv('DB_USERNAME') ?: 'prod_ecm'
+			password System.getenv('DB_PASSWORD')
+			driver 'org.postgresql.Driver'
+			contexts 'prod'
+			logLevel 'info'
+			searchPath 'src/main/resources'
+			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'prod_ecm'
+			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'prod_ecm'
+		}
+		
+		// Dry-run activity - generates SQL without executing (for quick local preview)
 		dryRun {
 			changelogFile 'db/changelog/db.changelog-master.xml'
-			url 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
-			username 'dev_ecm'
-			password 'dev_ecm!23456'
+			url System.getenv('DB_URL') ?: 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
+			username System.getenv('DB_USERNAME') ?: 'dev_ecm'
+			password System.getenv('DB_PASSWORD') ?: 'dev_ecm!23456'
 			driver 'org.postgresql.Driver'
 			contexts 'dev'
 			outputFile 'build/liquibase-update.sql'
 			searchPath 'src/main/resources'
+			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
 		}
 	}
 	
-	// Run main activity by default
-	runList = 'main'
+	// Run local activity by default
+	runList = 'local'
 }
 
 group = 'com.ecm.security'
