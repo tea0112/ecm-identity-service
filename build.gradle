@@ -12,24 +12,26 @@ liquibase {
 	activities {
 		// Main activity - uses local/dev database
 		main {
-			changelogFile 'src/main/resources/db/changelog/db.changelog-master.sql'
+			changelogFile 'db/changelog/db.changelog-master.xml'
 			url 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
 			username 'dev_ecm'
 			password 'dev_ecm!23456'
 			driver 'org.postgresql.Driver'
 			contexts 'dev'
 			logLevel 'info'
+			searchPath 'src/main/resources'
 		}
 		
 		// Dry-run activity - generates SQL without executing
 		dryRun {
-			changelogFile 'src/main/resources/db/changelog/db.changelog-master.sql'
+			changelogFile 'db/changelog/db.changelog-master.xml'
 			url 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
 			username 'dev_ecm'
 			password 'dev_ecm!23456'
 			driver 'org.postgresql.Driver'
 			contexts 'dev'
 			outputFile 'build/liquibase-update.sql'
+			searchPath 'src/main/resources'
 		}
 	}
 	
