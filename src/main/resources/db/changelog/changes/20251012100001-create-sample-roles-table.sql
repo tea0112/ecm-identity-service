@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset tea0112:v1.0-0002-create-sample-roles-table
+--changeset tea0112:20251012100001-create-sample-roles-table
 --comment: Create sample_roles table for role-based access control
 CREATE TABLE sample_roles (
     id BIGSERIAL PRIMARY KEY,

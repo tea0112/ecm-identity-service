@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset tea0112:v1.0-0001-create-sample-users-table
+--changeset tea0112:20251012100000-create-sample-users-table
 --comment: Create sample_users table with basic authentication fields
 CREATE TABLE sample_users (
     id BIGSERIAL PRIMARY KEY,

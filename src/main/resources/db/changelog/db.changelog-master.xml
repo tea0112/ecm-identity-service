@@ -5,11 +5,25 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <!-- Sprint 01 -->
-    <include file="db/changelog/versions/db.changelog-sprint-01.xml"/>
+    <!-- Schema Changes -->
+    <include file="db/changelog/changes/20251012100000-create-sample-users-table.sql"/>
+    <include file="db/changelog/changes/20251012100001-create-sample-roles-table.sql"/>
+    <include file="db/changelog/changes/20251012100002-create-sample-user-roles-table.sql"/>
 
-    <!-- Future sprints -->
-    <!-- <include file="db/changelog/versions/db.changelog-sprint-02.xml"/> -->
-    <!-- <include file="db/changelog/versions/db.changelog-sprint-03.xml"/> -->
+    <!-- Environment-Specific Seed Data -->
+    <include file="db/changelog/data/dev/20251012103000-seed-dev-roles.sql"/>
+    <include file="db/changelog/data/dev/20251012103001-seed-dev-test-data.sql"/>
+    <include file="db/changelog/data/dev/20251012103002-seed-dev-users.sql"/>
+    <include file="db/changelog/data/uat/20251012103003-seed-uat-roles.sql"/>
+    <include file="db/changelog/data/uat/20251012103004-seed-uat-test-data.sql"/>
+    <include file="db/changelog/data/uat/20251012103005-seed-uat-users.sql"/>
+    <include file="db/changelog/data/prod/20251012103006-seed-prod-roles.sql"/>
+    <include file="db/changelog/data/prod/20251012103007-seed-prod-initial-data.sql"/>
+
+    <!-- Future changes -->
+    <!-- <include file="db/changelog/changes/YYYYMMDDHHMMSS-next-change.sql"/> -->
+    <!-- <include file="db/changelog/data/dev/YYYYMMDDHHMMSS-next-dev-data.sql"/> -->
+    <!-- <include file="db/changelog/data/uat/YYYYMMDDHHMMSS-next-uat-data.sql"/> -->
+    <!-- <include file="db/changelog/data/prod/YYYYMMDDHHMMSS-next-prod-data.sql"/> -->
 
 </databaseChangeLog>

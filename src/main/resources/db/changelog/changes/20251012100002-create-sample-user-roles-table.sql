@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset tea0112:v1.0-0003-create-sample-user-roles-table
+--changeset tea0112:20251012100002-create-sample-user-roles-table
 --comment: Create sample_user_roles junction table for many-to-many relationship
 CREATE TABLE sample_user_roles (
     user_id BIGINT NOT NULL,

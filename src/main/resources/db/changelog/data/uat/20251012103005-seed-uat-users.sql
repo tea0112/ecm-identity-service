@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset tea0112:v1.0-0002-seed-uat-users context:uat
+--changeset tea0112:20251012103005-seed-uat-users context:uat
 --comment: Insert test users for UAT environment
 -- Password for all users: 'password123' (bcrypt hash)
 INSERT INTO sample_users (username, email, password_hash, first_name, last_name) VALUES 
