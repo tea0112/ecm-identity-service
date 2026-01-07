@@ -121,15 +121,15 @@ Each environment has its own data directory with timestamped files:
 **Preferred Approach** (Cross-database compatible):
 ```sql
 -- Only insert if the role doesn't already exist
-INSERT INTO sample_roles (name, description) 
+INSERT INTO roles (name, description) 
 SELECT 'ROLE_ADMIN', 'Administrator with full access'
-WHERE NOT EXISTS (SELECT 1 FROM sample_roles WHERE name = 'ROLE_ADMIN');
+WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'ROLE_ADMIN');
 ```
 
 **Avoid** (Database-specific):
 ```sql
 -- PostgreSQL-specific syntax
-INSERT INTO sample_roles (name, description) VALUES 
+INSERT INTO roles (name, description) VALUES 
     ('ROLE_ADMIN', 'Administrator with full access')
 ON CONFLICT (name) DO NOTHING;
 ```
@@ -259,8 +259,8 @@ Expected output:
 --liquibase formatted sql
 
 --changeset tea0112:20251012100000-create-sample-users-table
---comment: Create sample_users table with basic authentication fields
-CREATE TABLE sample_users (
+--comment: Create users table with basic authentication fields
+CREATE TABLE users (
 ```
 
 ### Liquibase Execution Testing

@@ -1,0 +1,936 @@
+# Domain-Entity Separation Architecture
+
+## Overview
+
+This document provides a comprehensive guide to the **Domain-Entity Separation Pattern** used in the ECM Identity Service. This architecture separates database persistence concerns from business logic, following clean architecture principles and ensuring maintainability, testability, and flexibility.
+
+## Core Concept
+
+The pattern divides the application into distinct layers:
+
+1. **Entity Layer** - Database representation (JPA entities)
+2. **Domain Layer** - Business logic models
+3. **Mapper Layer** - Conversion between Entity ↔ Domain
+4. **Repository Layer** - Data access (works with entities)
+5. **Service Layer** - Business logic (works with domain models)
+6. **Controller Layer** - REST API endpoints
+
+## Why Separate Domain from Entity?
+
+### Benefits
+
+1. **Database Independence**: Change database or ORM without affecting business logic
+2. **Testability**: Test business logic without database dependencies
+3. **Clear Separation**: Business rules stay in domain, persistence details in entities
+4. **Flexibility**: Same domain model can map to different database structures
+5. **Maintainability**: Changes to database schema don't break business logic
+
+### Go Developer Perspective
+
+If you're coming from Go, think of it like this:
+
+**Go (often mixed):**
+```go
+type User struct {
+    ID        int64     `db:"id" json:"id"`
+    Username  string    `db:"username" json:"username"`
+    // Database tags mixed with business logic
+}
+```
+
+**Java Pattern (separated):**
+- **Entity** = Your database struct (like Go struct with `db` tags)
+- **Domain** = Your business logic struct (like Go struct with `json` tags and methods)
+
+## Architecture Layers
+
+### 1. Entity Layer (`entity/` package)
+
+**Purpose**: Represents database tables using JPA annotations
+
+**Characteristics**:
+- Contains JPA annotations (`@Entity`, `@Table`, `@Column`, etc.)
+- Maps directly to database schema
+- Handles persistence concerns (relationships, constraints, indexes)
+- No business logic
+
+**Example Structure**:
+```
+src/main/java/com/ecm/security/identity/
+└── entity/
+    ├── UserEntity.java      # Maps to users table
+    └── RoleEntity.java      # Maps to roles table
+```
+
+**Key Annotations**:
+- `@Entity` - Marks class as JPA entity
+- `@Table(name = "...")` - Maps to database table
+- `@Id` - Primary key
+- `@Column` - Column mapping
+- `@ManyToMany`, `@OneToMany` - Relationships
+- `@PrePersist`, `@PreUpdate` - Lifecycle callbacks
+
+### 2. Domain Layer (`domain/` package)
+
+**Purpose**: Pure business logic models, independent of persistence
+
+**Characteristics**:
+- No JPA annotations
+- Contains business logic methods
+- Implements framework interfaces when needed (e.g., `UserDetails`)
+- Represents business concepts, not database structure
+
+**Example Structure**:
+```
+src/main/java/com/ecm/security/identity/
+└── domain/
+    ├── User.java            # Business logic for users
+    └── Role.java            # Business logic for roles
+```
+
+**Key Features**:
+- Business methods (e.g., `getAuthorities()`)
+- Validation logic
+- Domain-specific calculations
+- Framework integrations (Spring Security `UserDetails`)
+
+### 3. Mapper Layer (`mapper/` package)
+
+**Purpose**: Converts between Entity and Domain models
+
+**Characteristics**:
+- Spring `@Component` for dependency injection
+- Bidirectional conversion: `toDomain()` and `toEntity()`
+- Handles null safety
+- Manages relationships (e.g., converting `Set<RoleEntity>` to `Set<Role>`)
+
+**Example Structure**:
+```
+src/main/java/com/ecm/security/identity/
+└── mapper/
+    ├── UserMapper.java      # UserEntity ↔ User
+    └── RoleMapper.java      # RoleEntity ↔ Role
+```
+
+**Conversion Flow**:
+```
+Database → Entity → Mapper → Domain → Service
+         ← Entity ← Mapper ← Domain ← Service
+```
+
+### 4. Repository Layer (`repository/` package)
+
+**Purpose**: Data access using Spring Data JPA
+
+**Characteristics**:
+- Extends `JpaRepository<Entity, ID>`
+- Works with Entity classes only
+- Provides query methods
+- Spring generates implementation automatically
+
+**Example Structure**:
+```
+src/main/java/com/ecm/security/identity/
+└── repository/
+    ├── UserRepository.java
+    └── RoleRepository.java
+```
+
+### 5. Service Layer (`service/` package)
+
+**Purpose**: Business logic orchestration
+
+**Characteristics**:
+- Works with Domain models
+- Uses Repositories for data access
+- Uses Mappers for Entity ↔ Domain conversion
+- Contains transaction management (`@Transactional`)
+- Implements security (`@PreAuthorize`)
+
+**Example Structure**:
+```
+src/main/java/com/ecm/security/identity/
+└── service/
+    ├── UserService.java
+    └── RoleService.java
+```
+
+### 6. Controller Layer (`controller/` package)
+
+**Purpose**: REST API endpoints
+
+**Characteristics**:
+- Works with DTOs (Data Transfer Objects)
+- Calls Services
+- Handles HTTP requests/responses
+- No business logic
+
+**Example Structure**:
+```
+src/main/java/com/ecm/security/identity/
+└── controller/
+    └── AdminController.java
+```
+
+## Data Flow Example
+
+### Creating a User
+
+```
+1. Controller receives HTTP POST /api/admin/users
+   ↓
+2. Controller calls UserService.createUser()
+   ↓
+3. Service creates Domain User object (business logic)
+   ↓
+4. Service uses UserMapper.toEntity() to convert Domain → Entity
+   ↓
+5. Service calls UserRepository.save(UserEntity)
+   ↓
+6. Repository persists to database
+   ↓
+7. Service uses UserMapper.toDomain() to convert Entity → Domain
+   ↓
+8. Service converts Domain → DTO
+   ↓
+9. Controller returns DTO as JSON response
+```
+
+### Loading a User
+
+```
+1. Controller receives HTTP GET /api/admin/users/{username}
+   ↓
+2. Controller calls UserService.getUserByUsername()
+   ↓
+3. Service calls UserRepository.findByUsername()
+   ↓
+4. Repository returns UserEntity from database
+   ↓
+5. Service uses UserMapper.toDomain() to convert Entity → Domain
+   ↓
+6. Service applies business logic on Domain model
+   ↓
+7. Service converts Domain → DTO
+   ↓
+8. Controller returns DTO as JSON response
+```
+
+## Implementation Guide
+
+### Step 1: Create Entity Classes
+
+Start with entities that map to your existing database tables.
+
+**Example: RoleEntity.java**
+```java
+package com.ecm.security.identity.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "roles")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class RoleEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false, unique = true, length = 50)
+    private String name;
+    
+    @Column(length = 255)
+    private String description;
+    
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    private Set<UserEntity> users;
+    
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+    
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+    
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}
+```
+
+**Key Points**:
+- `@Table(name = "roles")` matches your database table name
+- `@Column` annotations match database column names (snake_case)
+- `@PrePersist` and `@PreUpdate` handle timestamps automatically
+- Relationships use JPA annotations (`@ManyToMany`, etc.)
+
+### Step 2: Create Domain Models
+
+Create pure business logic models without JPA annotations.
+
+**Example: Role.java**
+```java
+package com.ecm.security.identity.domain;
+
+import lombok.*;
+import java.time.LocalDateTime;
+import java.util.Set;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Role {
+    private Long id;
+    private String name;
+    private String description;
+    private Set<User> users;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
+}
+```
+
+**Example: User.java** (implements Spring Security interface)
+```java
+package com.ecm.security.identity.domain;
+
+import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User implements UserDetails {
+    private Long id;
+    private String username;
+    private String email;
+    private String passwordHash;
+    private String firstName;
+    private String lastName;
+    private Boolean enabled;
+    private Boolean accountLocked;
+    private Boolean accountExpired;
+    private Boolean credentialsExpired;
+    private Set<Role> roles;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
+    
+    // Business logic methods (Spring Security integration)
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (roles == null) {
+            return Set.of();
+        }
+        return roles.stream()
+            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+            .collect(Collectors.toSet());
+    }
+    
+    @Override
+    public String getPassword() {
+        return passwordHash;
+    }
+    
+    @Override
+    public boolean isAccountNonExpired() {
+        return !accountExpired;
+    }
+    
+    @Override
+    public boolean isAccountNonLocked() {
+        return !accountLocked;
+    }
+    
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return !credentialsExpired;
+    }
+    
+    @Override
+    public boolean isEnabled() {
+        return enabled != null && enabled;
+    }
+}
+```
+
+**Key Points**:
+- No JPA annotations
+- Implements `UserDetails` for Spring Security
+- Contains business logic methods
+- Uses Java naming conventions (camelCase)
+
+### Step 3: Create Mappers
+
+Create bidirectional converters between Entity and Domain.
+
+**Example: RoleMapper.java**
+```java
+package com.ecm.security.identity.mapper;
+
+import com.ecm.security.identity.domain.Role;
+import com.ecm.security.identity.entity.RoleEntity;
+import org.springframework.stereotype.Component;
+
+@Component
+public class RoleMapper {
+    
+    public Role toDomain(RoleEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        
+        return Role.builder()
+            .id(entity.getId())
+            .name(entity.getName())
+            .description(entity.getDescription())
+            .createdAt(entity.getCreatedAt())
+            .updatedAt(entity.getUpdatedAt())
+            .createdBy(entity.getCreatedBy())
+            .updatedBy(entity.getUpdatedBy())
+            .build();
+    }
+    
+    public RoleEntity toEntity(Role domain) {
+        if (domain == null) {
+            return null;
+        }
+        
+        return RoleEntity.builder()
+            .id(domain.getId())
+            .name(domain.getName())
+            .description(domain.getDescription())
+            .createdAt(domain.getCreatedAt())
+            .updatedAt(domain.getUpdatedAt())
+            .createdBy(domain.getCreatedBy())
+            .updatedBy(domain.getUpdatedBy())
+            .build();
+    }
+}
+```
+
+**Example: UserMapper.java** (handles relationships)
+```java
+package com.ecm.security.identity.mapper;
+
+import com.ecm.security.identity.domain.Role;
+import com.ecm.security.identity.domain.User;
+import com.ecm.security.identity.entity.RoleEntity;
+import com.ecm.security.identity.entity.UserEntity;
+import org.springframework.stereotype.Component;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Component
+public class UserMapper {
+    
+    private final RoleMapper roleMapper;
+    
+    public UserMapper(RoleMapper roleMapper) {
+        this.roleMapper = roleMapper;
+    }
+    
+    public User toDomain(UserEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        
+        Set<Role> roles = null;
+        if (entity.getRoles() != null) {
+            roles = entity.getRoles().stream()
+                .map(roleMapper::toDomain)
+                .collect(Collectors.toSet());
+        }
+        
+        return User.builder()
+            .id(entity.getId())
+            .username(entity.getUsername())
+            .email(entity.getEmail())
+            .passwordHash(entity.getPasswordHash())
+            .firstName(entity.getFirstName())
+            .lastName(entity.getLastName())
+            .enabled(entity.getEnabled())
+            .accountLocked(entity.getAccountLocked())
+            .accountExpired(entity.getAccountExpired())
+            .credentialsExpired(entity.getCredentialsExpired())
+            .roles(roles)
+            .createdAt(entity.getCreatedAt())
+            .updatedAt(entity.getUpdatedAt())
+            .createdBy(entity.getCreatedBy())
+            .updatedBy(entity.getUpdatedBy())
+            .build();
+    }
+    
+    public UserEntity toEntity(User domain) {
+        if (domain == null) {
+            return null;
+        }
+        
+        Set<RoleEntity> roleEntities = null;
+        if (domain.getRoles() != null) {
+            roleEntities = domain.getRoles().stream()
+                .map(roleMapper::toEntity)
+                .collect(Collectors.toSet());
+        }
+        
+        return UserEntity.builder()
+            .id(domain.getId())
+            .username(domain.getUsername())
+            .email(domain.getEmail())
+            .passwordHash(domain.getPasswordHash())
+            .firstName(domain.getFirstName())
+            .lastName(domain.getLastName())
+            .enabled(domain.getEnabled())
+            .accountLocked(domain.getAccountLocked())
+            .accountExpired(domain.getAccountExpired())
+            .credentialsExpired(domain.getCredentialsExpired())
+            .roles(roleEntities)
+            .createdAt(domain.getCreatedAt())
+            .updatedAt(domain.getUpdatedAt())
+            .createdBy(domain.getCreatedBy())
+            .updatedBy(domain.getUpdatedBy())
+            .build();
+    }
+}
+```
+
+**Key Points**:
+- Always check for null
+- Handle relationships (convert `Set<RoleEntity>` ↔ `Set<Role>`)
+- Use dependency injection for nested mappers
+- Keep mapping logic simple and straightforward
+
+### Step 4: Create Repositories
+
+Create Spring Data JPA repositories that work with entities.
+
+**Example: RoleRepository.java**
+```java
+package com.ecm.security.identity.repository;
+
+import com.ecm.security.identity.entity.RoleEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface RoleRepository extends JpaRepository<RoleEntity, Long> {
+    Optional<RoleEntity> findByName(String name);
+    boolean existsByName(String name);
+}
+```
+
+**Example: UserRepository.java**
+```java
+package com.ecm.security.identity.repository;
+
+import com.ecm.security.identity.entity.UserEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
+    Optional<UserEntity> findByUsername(String username);
+    Optional<UserEntity> findByEmail(String email);
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+    
+    @Query("SELECT u FROM UserEntity u JOIN FETCH u.roles WHERE u.username = :username")
+    Optional<UserEntity> findByUsernameWithRoles(@Param("username") String username);
+}
+```
+
+**Key Points**:
+- Extends `JpaRepository<Entity, ID>`
+- Spring generates implementation automatically
+- Use `JOIN FETCH` to eagerly load relationships when needed
+- Methods return `Optional` for null safety
+
+### Step 5: Create Services
+
+Create services that work with domain models.
+
+**Example: RoleService.java**
+```java
+package com.ecm.security.identity.service;
+
+import com.ecm.security.identity.domain.Role;
+import com.ecm.security.identity.entity.RoleEntity;
+import com.ecm.security.identity.mapper.RoleMapper;
+import com.ecm.security.identity.repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class RoleService {
+    
+    private final RoleRepository roleRepository;
+    private final RoleMapper roleMapper;
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll().stream()
+            .map(roleMapper::toDomain)
+            .collect(Collectors.toList());
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    public Role createRole(String name, String description) {
+        if (roleRepository.existsByName(name)) {
+            throw new RuntimeException("Role already exists: " + name);
+        }
+        
+        Role role = Role.builder()
+            .name(name)
+            .description(description)
+            .createdBy("system")
+            .updatedBy("system")
+            .build();
+        
+        RoleEntity roleEntity = roleMapper.toEntity(role);
+        RoleEntity savedEntity = roleRepository.save(roleEntity);
+        
+        return roleMapper.toDomain(savedEntity);
+    }
+}
+```
+
+**Key Points**:
+- `@Transactional` for database transactions
+- `@PreAuthorize` for security
+- Work with Domain models in business logic
+- Convert Entity ↔ Domain using mappers
+- Use repositories for data access
+
+### Step 6: Create DTOs
+
+Create Data Transfer Objects for API responses.
+
+**Example: UserResponse.java**
+```java
+package com.ecm.security.identity.dto;
+
+import lombok.Builder;
+import lombok.Data;
+import java.util.Set;
+
+@Data
+@Builder
+public class UserResponse {
+    private Long id;
+    private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private Boolean enabled;
+    private Set<String> roles;
+    // Note: passwordHash is NOT included for security
+}
+```
+
+**Key Points**:
+- Separate from Domain models
+- Only include fields needed by API
+- Never expose sensitive data (passwords, etc.)
+
+### Step 7: Create Controllers
+
+Create REST endpoints that use services.
+
+**Example: AdminController.java**
+```java
+package com.ecm.security.identity.controller;
+
+import com.ecm.security.identity.domain.Role;
+import com.ecm.security.identity.dto.UserResponse;
+import com.ecm.security.identity.service.RoleService;
+import com.ecm.security.identity.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@RestController
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+public class AdminController {
+    
+    private final UserService userService;
+    private final RoleService roleService;
+    
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+    
+    @PostMapping("/users")
+    public ResponseEntity<UserResponse> createUser(@RequestBody Map<String, Object> request) {
+        UserResponse user = userService.createUser(
+            (String) request.get("username"),
+            (String) request.get("email"),
+            (String) request.get("password"),
+            (String) request.get("firstName"),
+            (String) request.get("lastName"),
+            request.get("roles") != null ? 
+                Set.copyOf((List<String>) request.get("roles")) : Set.of()
+        );
+        return ResponseEntity.ok(user);
+    }
+    
+    @GetMapping("/roles")
+    public ResponseEntity<List<Role>> getAllRoles() {
+        return ResponseEntity.ok(roleService.getAllRoles());
+    }
+    
+    @PostMapping("/roles")
+    public ResponseEntity<Role> createRole(@RequestBody Map<String, String> request) {
+        Role role = roleService.createRole(
+            request.get("name"),
+            request.get("description")
+        );
+        return ResponseEntity.ok(role);
+    }
+}
+```
+
+## Complete Directory Structure
+
+```
+src/main/java/com/ecm/security/identity/
+├── entity/              # JPA entities (database layer)
+│   ├── UserEntity.java
+│   └── RoleEntity.java
+├── domain/              # Domain models (business layer)
+│   ├── User.java
+│   └── Role.java
+├── mapper/              # Entity ↔ Domain converters
+│   ├── UserMapper.java
+│   └── RoleMapper.java
+├── repository/          # Data access (works with entities)
+│   ├── UserRepository.java
+│   └── RoleRepository.java
+├── service/             # Business logic (works with domain)
+│   ├── UserService.java
+│   └── RoleService.java
+├── dto/                 # Data Transfer Objects (API layer)
+│   └── UserResponse.java
+├── controller/          # REST endpoints
+│   └── AdminController.java
+└── security/            # Security configuration
+    └── CustomUserDetailsService.java
+```
+
+## Implementation Order
+
+Follow this order for smooth implementation:
+
+1. **Entity Classes** - Start with `RoleEntity` (simpler), then `UserEntity`
+2. **Domain Models** - Create `Role`, then `User` (implements `UserDetails`)
+3. **Mappers** - Create `RoleMapper`, then `UserMapper`
+4. **Repositories** - Create `RoleRepository`, then `UserRepository`
+5. **DTOs** - Create `UserResponse` for API responses
+6. **Services** - Create `RoleService`, then `UserService`
+7. **Security** - Create `CustomUserDetailsService`
+8. **Controllers** - Create `AdminController` last
+
+## Testing Strategy
+
+### Unit Testing Domain Models
+
+Test business logic without database:
+
+```java
+@Test
+void testUserGetAuthorities() {
+    Role adminRole = Role.builder().name("ADMIN").build();
+    User user = User.builder()
+        .username("testuser")
+        .roles(Set.of(adminRole))
+        .build();
+    
+    Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
+    assertEquals(1, authorities.size());
+    assertTrue(authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")));
+}
+```
+
+### Integration Testing Services
+
+Test with in-memory database:
+
+```java
+@SpringBootTest
+@Transactional
+class UserServiceTest {
+    @Autowired
+    private UserService userService;
+    
+    @Test
+    void testCreateUser() {
+        UserResponse user = userService.createUser(
+            "testuser", "test@example.com", "password",
+            "Test", "User", Set.of("ROLE_USER")
+        );
+        
+        assertNotNull(user.getId());
+        assertEquals("testuser", user.getUsername());
+    }
+}
+```
+
+## Common Patterns
+
+### Handling Relationships
+
+When entities have relationships (e.g., `UserEntity` has `Set<RoleEntity>`):
+
+1. **In Entity**: Use JPA annotations (`@ManyToMany`, `@JoinTable`)
+2. **In Domain**: Use plain Java collections (`Set<Role>`)
+3. **In Mapper**: Convert collections using nested mappers
+
+### Lazy vs Eager Loading
+
+- **Entity Layer**: Use `FetchType.LAZY` for relationships (default)
+- **Repository Layer**: Use `JOIN FETCH` when you need relationships loaded
+- **Service Layer**: Load relationships explicitly when needed
+
+### Null Safety
+
+Always check for null in mappers:
+
+```java
+public User toDomain(UserEntity entity) {
+    if (entity == null) {
+        return null;
+    }
+    // ... mapping logic
+}
+```
+
+## Best Practices
+
+### ✅ DO:
+
+- Keep entities focused on persistence
+- Keep domain models focused on business logic
+- Use mappers for all Entity ↔ Domain conversions
+- Test domain models independently
+- Use DTOs for API responses
+- Handle null in mappers
+- Use `@Transactional` in services
+
+### ❌ DON'T:
+
+- Put business logic in entities
+- Put JPA annotations in domain models
+- Skip mappers (don't use entities directly in services)
+- Expose entities in API responses
+- Mix database concerns with business logic
+- Forget to handle relationships in mappers
+
+## Troubleshooting
+
+### Issue: Circular Dependencies in Mappers
+
+**Problem**: `UserMapper` needs `RoleMapper`, but `RoleMapper` might need `UserMapper`
+
+**Solution**: Only map in one direction for relationships, or use lazy initialization
+
+```java
+// In UserMapper - map roles
+Set<Role> roles = entity.getRoles().stream()
+    .map(roleMapper::toDomain)
+    .collect(Collectors.toSet());
+
+// In RoleMapper - don't map users (or map lazily)
+// Omit users field or use lazy loading
+```
+
+### Issue: LazyInitializationException
+
+**Problem**: Accessing relationships outside transaction
+
+**Solution**: Use `JOIN FETCH` in repository queries:
+
+```java
+@Query("SELECT u FROM UserEntity u JOIN FETCH u.roles WHERE u.username = :username")
+Optional<UserEntity> findByUsernameWithRoles(@Param("username") String username);
+```
+
+### Issue: Entity Not Persisting
+
+**Problem**: Changes not saved to database
+
+**Solution**: Ensure `@Transactional` on service methods:
+
+```java
+@Service
+@Transactional  // Class-level or method-level
+public class UserService {
+    // ...
+}
+```
+
+## Migration from Mixed Pattern
+
+If you have existing code that mixes entities and domain:
+
+1. **Identify**: Find classes with both JPA annotations and business logic
+2. **Split**: Create separate Entity and Domain classes
+3. **Create Mappers**: Add conversion logic
+4. **Update Services**: Use mappers for conversions
+5. **Test**: Verify behavior unchanged
+6. **Refactor**: Gradually move business logic to domain
+
+## Conclusion
+
+The Domain-Entity Separation Pattern provides:
+
+- **Clear Architecture**: Each layer has a single responsibility
+- **Maintainability**: Changes isolated to specific layers
+- **Testability**: Business logic testable without database
+- **Flexibility**: Easy to change persistence layer
+- **Scalability**: Pattern works for large applications
+
+This architecture follows clean architecture principles and provides a solid foundation for the ECM Identity Service.
