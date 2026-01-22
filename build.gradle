@@ -1,3 +1,5 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.6'
@@ -109,10 +111,12 @@ repositories {
 
 dependencies {
 	// Spring Boot Starters
+	implementation project(':identity-shared')
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.kafka:spring-kafka'
 	
@@ -126,6 +130,9 @@ dependencies {
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// JPA Static Metamodel (Criteria API helpers)
+	annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen'
 	
 	// Development
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -148,6 +155,42 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+def testcontainersProfiles = {
+	def profiles = System.getProperty('spring.profiles.active') ?: System.getenv('SPRING_PROFILES_ACTIVE') ?: ''
+	return profiles ? "${profiles},testcontainers" : 'testcontainers'
+}
+
+def dockerAvailable = {
+	try {
+		def output = new ByteArrayOutputStream()
+		def result = exec {
+			commandLine 'docker', 'info'
+			standardOutput = output
+			errorOutput = output
+			ignoreExitValue = true
+		}
+		return result.exitValue == 0
+	} catch (Exception ex) {
+		return false
+	}
+}
+
+tasks.register('testWithContainers', Test) {
+	group = 'verification'
+	description = 'Runs tests with Testcontainers profile enabled'
+	useJUnitPlatform()
+	classpath = sourceSets.test.runtimeClasspath
+	testClassesDirs = sourceSets.test.output.classesDirs
+	systemProperty 'spring.profiles.active', testcontainersProfiles()
+	onlyIf {
+		def available = dockerAvailable()
+		if (!available) {
+			logger.lifecycle('Skipping testWithContainers: Docker is not available.')
+		}
+		return available
+	}
 }
 
 // ============================================

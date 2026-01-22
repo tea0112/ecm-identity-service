@@ -3,7 +3,7 @@
 --comment: Create users table
 
 CREATE TABLE users (
-    id                   BIGSERIAL PRIMARY KEY,
+    id                   UUID PRIMARY KEY DEFAULT uuidv7(),
     username             VARCHAR(100) NOT NULL UNIQUE,
     email                VARCHAR(255) NOT NULL UNIQUE,
     password_hash        VARCHAR(255) NOT NULL,
@@ -13,8 +13,8 @@ CREATE TABLE users (
     account_locked       BOOLEAN NOT NULL DEFAULT false,
     account_expired      BOOLEAN NOT NULL DEFAULT false,
     credentials_expired  BOOLEAN NOT NULL DEFAULT false,
-    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by           VARCHAR(100) DEFAULT 'system',
     updated_by           VARCHAR(100) DEFAULT 'system'
 );

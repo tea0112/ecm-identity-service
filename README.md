@@ -15,6 +15,11 @@ PROFILE=uat make db-status       # Check UAT status
 make db-validate                  # Validate changelogs
 PROFILE=dev make db-update       # Apply changes to dev
 PROFILE=dev ROLLBACK_COUNT=1 make db-rollback-count  # Rollback last changeset
+
+# Tests
+./gradlew test                    # Unit tests without Testcontainers
+./gradlew testWithContainers      # Testcontainers (skips if Docker unavailable)
+./gradlew test -Dspring.profiles.active=testcontainers
 ```
 
 # Liquibase - Best Practices

@@ -1,1 +1,2 @@
 rootProject.name = 'ecm-identity-service'
+include('identity-shared')

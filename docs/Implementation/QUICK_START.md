@@ -22,7 +22,7 @@ Follow this checklist in order:
   - Null safety checks
 
 - [ ] **1.4** Create `repository/RoleRepository.java`
-  - Extend `JpaRepository<RoleEntity, Long>`
+  - Extend `JpaRepository<RoleEntity, UUID>`
   - Add `findByName()` method
   - Add `existsByName()` method
 
@@ -49,7 +49,7 @@ Follow this checklist in order:
   - Map all fields
 
 - [ ] **2.4** Create `repository/UserRepository.java`
-  - Extend `JpaRepository<UserEntity, Long>`
+  - Extend `JpaRepository<UserEntity, UUID>`
   - Add `findByUsername()`, `findByEmail()`
   - Add `findByUsernameWithRoles()` with `JOIN FETCH`
 
@@ -95,6 +95,11 @@ Follow this checklist in order:
 - [ ] **4.2** Test Security
   - Verify authentication works
   - Test role-based authorization
+
+### Build Helper: Static Metamodel
+
+- Run `./gradlew clean compileJava` to generate Criteria API metamodels under `build/generated/sources/annotationProcessor/java/main`.
+- Use `UserEntity_`, `RoleEntity_`, etc., in Criteria queries to avoid string field names.
 
 ### Phase 5: API Layer
 

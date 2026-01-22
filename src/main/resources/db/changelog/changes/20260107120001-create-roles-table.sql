@@ -3,11 +3,11 @@
 --comment: Create roles table
 
 CREATE TABLE roles (
-    id          BIGSERIAL PRIMARY KEY,
+    id          UUID PRIMARY KEY DEFAULT uuidv7(),
     name        VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255),
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(100) DEFAULT 'system',
     updated_by  VARCHAR(100) DEFAULT 'system'
 );

@@ -1,6 +1,7 @@
 package com.ecm.security.identity;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -8,7 +9,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
+@EnabledIfSystemProperty(named = "spring.profiles.active", matches = ".*testcontainers.*")
 class EcmIdentityServiceApplicationTests {
 
 	@Container
