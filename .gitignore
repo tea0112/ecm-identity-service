@@ -36,6 +36,14 @@ out/
 ### VS Code ###
 .vscode/
 
+### Metals/Bloop ###
+.bloop/
+.metals/
+
+### Generated Sources ###
+/com/
+/entity/
+
 # Environment variables
 .env
 .env.local
