@@ -1,249 +1,54 @@
-import java.io.ByteArrayOutputStream
-
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.6'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'org.liquibase.gradle' version '2.2.2'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.liquibase.gradle' version '2.2.2'
 }
 
-// ============================================
-// Liquibase Configuration
-// ============================================
+allprojects {
+    group = 'com.ecm.security'
+    version = '0.0.1-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.6"
+        }
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+}
+
+bootJar { enabled = false }
+jar { enabled = false }
+
 liquibase {
-	activities {
-		// All activities use the same environment variable names
-		// Set different .env files or environment variables per deployment target
-		
-		// Local environment (localhost development)
-		local {
-			changelogFile 'db/changelog/db.changelog-master.xml'
-			url System.getenv('DB_URL') ?: 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
-			username System.getenv('DB_USERNAME') ?: 'dev_ecm'
-			password System.getenv('DB_PASSWORD') ?: 'dev_ecm!23456'
-			driver 'org.postgresql.Driver'
-			contexts 'dev'
-			logLevel 'info'
-			searchPath 'src/main/resources'
-			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
-			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
-		}
-		
-		// Development environment (shared dev server)
-		dev {
-			changelogFile 'db/changelog/db.changelog-master.xml'
-			url System.getenv('DB_URL') ?: 'jdbc:postgresql://dev-server:5432/ecm_identity_dev'
-			username System.getenv('DB_USERNAME') ?: 'dev_ecm'
-			password System.getenv('DB_PASSWORD')
-			driver 'org.postgresql.Driver'
-			contexts 'dev'
-			logLevel 'info'
-			searchPath 'src/main/resources'
-			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
-			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
-		}
-		
-		// UAT environment
-		uat {
-			changelogFile 'db/changelog/db.changelog-master.xml'
-			url System.getenv('DB_URL') ?: 'jdbc:postgresql://uat-server:5432/ecm_identity_uat'
-			username System.getenv('DB_USERNAME') ?: 'uat_ecm'
-			password System.getenv('DB_PASSWORD')
-			driver 'org.postgresql.Driver'
-			contexts 'uat'
-			logLevel 'info'
-			searchPath 'src/main/resources'
-			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'uat_ecm'
-			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'uat_ecm'
-		}
-		
-		// Production environment
-		prod {
-			changelogFile 'db/changelog/db.changelog-master.xml'
-			url System.getenv('DB_URL') ?: 'jdbc:postgresql://prod-server:5432/ecm_identity_prod'
-			username System.getenv('DB_USERNAME') ?: 'prod_ecm'
-			password System.getenv('DB_PASSWORD')
-			driver 'org.postgresql.Driver'
-			contexts 'prod'
-			logLevel 'info'
-			searchPath 'src/main/resources'
-			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'prod_ecm'
-			liquibaseSchemaName System.getenv('DB_SCHEMA') ?: 'prod_ecm'
-		}
-		
-		// Dry-run activity - generates SQL without executing (for quick local preview)
-		dryRun {
-			changelogFile 'db/changelog/db.changelog-master.xml'
-			url System.getenv('DB_URL') ?: 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
-			username System.getenv('DB_USERNAME') ?: 'dev_ecm'
-			password System.getenv('DB_PASSWORD') ?: 'dev_ecm!23456'
-			driver 'org.postgresql.Driver'
-			contexts 'dev'
-			outputFile 'build/liquibase-update.sql'
-			searchPath 'src/main/resources'
-			defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
-		}
-	}
-	
-	// Run local activity by default
-	runList = 'local'
-}
-
-group = 'com.ecm.security'
-version = '0.0.1-SNAPSHOT'
-description = 'Identity and Access Management (IAM) service for the ECM platform.'
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
-}
-
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
-repositories {
-	mavenCentral()
-}
-
-dependencies {
-	// Spring Boot Starters
-	implementation project(':identity-shared')
-	implementation 'org.springframework.boot:spring-boot-starter-amqp'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.kafka:spring-kafka'
-	
-	// Liquibase - Database Migration
-	implementation 'org.liquibase:liquibase-core'
-	liquibaseRuntime 'org.liquibase:liquibase-core'
-	liquibaseRuntime 'org.postgresql:postgresql'
-	liquibaseRuntime 'info.picocli:picocli:4.7.5'
-	liquibaseRuntime 'ch.qos.logback:logback-classic:1.4.14'
-	
-	// Lombok
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-
-	// JPA Static Metamodel (Criteria API helpers)
-	annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen'
-	
-	// Development
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	
-	// Database Driver
-	runtimeOnly 'org.postgresql:postgresql'
-	
-	// Testing
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.amqp:spring-rabbit-test'
-	testImplementation 'org.springframework.kafka:spring-kafka-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:kafka'
-	testImplementation 'org.testcontainers:postgresql'
-	testImplementation 'org.testcontainers:rabbitmq'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
-}
-
-def testcontainersProfiles = {
-	def profiles = System.getProperty('spring.profiles.active') ?: System.getenv('SPRING_PROFILES_ACTIVE') ?: ''
-	return profiles ? "${profiles},testcontainers" : 'testcontainers'
-}
-
-def dockerAvailable = {
-	try {
-		def output = new ByteArrayOutputStream()
-		def result = exec {
-			commandLine 'docker', 'info'
-			standardOutput = output
-			errorOutput = output
-			ignoreExitValue = true
-		}
-		return result.exitValue == 0
-	} catch (Exception ex) {
-		return false
-	}
-}
-
-tasks.register('testWithContainers', Test) {
-	group = 'verification'
-	description = 'Runs tests with Testcontainers profile enabled'
-	useJUnitPlatform()
-	classpath = sourceSets.test.runtimeClasspath
-	testClassesDirs = sourceSets.test.output.classesDirs
-	systemProperty 'spring.profiles.active', testcontainersProfiles()
-	onlyIf {
-		def available = dockerAvailable()
-		if (!available) {
-			logger.lifecycle('Skipping testWithContainers: Docker is not available.')
-		}
-		return available
-	}
-}
-
-// ============================================
-// Liquibase Gradle Tasks
-// ============================================
-
-// Validate changelog syntax
-task liquibaseValidate {
-	group = 'liquibase'
-	description = 'Validates the Liquibase changelog for errors'
-	doLast {
-		println "Validating Liquibase changelogs..."
-	}
-}
-
-// Generate SQL without executing (dry-run)
-task liquibaseDryRun {
-	group = 'liquibase'
-	description = 'Generate SQL output without executing changes'
-	doLast {
-		println "Running Liquibase in dry-run mode..."
-		println "Output will be in: build/liquibase-update.sql"
-	}
-}
-
-// Custom task to show Liquibase status
-task liquibaseStatusReport {
-	group = 'liquibase'
-	description = 'Show detailed Liquibase migration status'
-	doLast {
-		println "Checking Liquibase status..."
-	}
-}
-
-// Task to generate diff changelog (compare DB with entities)
-task liquibaseDiffChangelog {
-	group = 'liquibase'
-	description = 'Generate changelog by comparing database with JPA entities (requires Hibernate plugin)'
-	doLast {
-		println """
-		===========================================
-		Liquibase Diff Changelog Generation
-		===========================================
-		
-		To generate a changelog from database differences:
-		
-		1. Make sure your database is up to date
-		2. Modify your JPA entities
-		3. Run: ./gradlew liquibaseDiffChangelog
-		
-		Note: This requires additional Hibernate configuration
-		See: https://docs.liquibase.com/tools-integrations/community-supported/hibernate/hibernate.html
-		===========================================
-		"""
-	}
+    activities {
+        local {
+            changelogFile 'db/changelog/db.changelog-master.xml'
+            url System.getenv('DB_URL') ?: 'jdbc:postgresql://localhost:5432/ecm_identity_dev'
+            username System.getenv('DB_USERNAME') ?: 'dev_ecm'
+            password System.getenv('DB_PASSWORD') ?: 'dev_ecm!23456'
+            driver 'org.postgresql.Driver'
+            defaultSchemaName System.getenv('DB_SCHEMA') ?: 'dev_ecm'
+        }
+    }
 }
