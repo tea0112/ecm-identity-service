@@ -15,15 +15,16 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: 'io.spring.dependency-management'
-
-    dependencyManagement {
-        imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.10"
+    // React when java or java-library plugin is applied
+    pluginManager.withPlugin('java') {
+        apply plugin: 'io.spring.dependency-management'
+        
+        dependencyManagement {
+            imports {
+                mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.10"
+            }
         }
-    }
 
-    plugins.withId('java') {
         java {
             toolchain {
                 languageVersion = JavaLanguageVersion.of(21)
@@ -39,10 +40,11 @@ subprojects {
                 extendsFrom annotationProcessor
             }
         }
-    }
-    
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
+        
+        tasks.withType(JavaCompile) {
+            options.encoding = 'UTF-8'
+            options.compilerArgs << '-parameters'
+        }
     }
 }
 

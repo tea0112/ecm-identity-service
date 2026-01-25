@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class UserService {
   private final UserRepository userRepository;
   private final RoleLookup roleLookup;

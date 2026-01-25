@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class UserController {
   private final UserService userService;
   private final RoleLookup roleLookup;
@@ -66,6 +68,7 @@ public class UserController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
     try {
       User created = userService.createUser(
@@ -84,6 +87,7 @@ public class UserController {
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public UserResponse updateUser(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
     try {
       User updated = userService.updateUser(
@@ -99,6 +103,7 @@ public class UserController {
   }
 
   @PatchMapping("/{id}/password")
+  @PreAuthorize("hasRole('ADMIN')")
   public UserResponse changePassword(@PathVariable UUID id, @Valid @RequestBody ChangePasswordRequest request) {
     try {
       User updated = userService.changePassword(id, request.getNewPassword());
@@ -109,6 +114,7 @@ public class UserController {
   }
 
   @PostMapping("/{id}/roles")
+  @PreAuthorize("hasRole('ADMIN')")
   public UserResponse addRole(@PathVariable UUID id, @Valid @RequestBody RoleChangeRequest request) {
     try {
       User updated = userService.addRoleToUser(id, request.getRoleName());
@@ -119,6 +125,7 @@ public class UserController {
   }
 
   @DeleteMapping("/{id}/roles/{roleName}")
+  @PreAuthorize("hasRole('ADMIN')")
   public UserResponse removeRole(@PathVariable UUID id, @PathVariable String roleName) {
     try {
       User updated = userService.removeRoleFromUser(id, roleName);
@@ -129,6 +136,7 @@ public class UserController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
     try {
       userService.deleteUser(id);
