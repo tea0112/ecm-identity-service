@@ -41,7 +41,11 @@ clean: ## Clean build artifacts
 
 run-dev: ## Run application with dev profile
 	@echo "$(GREEN)Starting application with dev profile...$(NC)"
-	./gradlew bootRun --args='--spring.profiles.active=dev'
+	./gradlew :identity-app:bootRun --args='--spring.profiles.active=dev'
+
+run-local: ## Run application with local profile
+	@echo "$(GREEN)Starting application with local profile...$(NC)"
+	./gradlew :identity-app:bootRun --args='--spring.profiles.active=local'
 
 run-uat: ## Run application with UAT profile
 	@echo "$(GREEN)Starting application with UAT profile...$(NC)"
@@ -123,9 +127,9 @@ db-drop-all: ## Drop all database objects managed by Liquibase (DANGEROUS!)
 	fi
 
 # Docker targets (for local development)
-docker-up: ## Start PostgreSQL 18 in Docker for local dev
-	@echo "$(GREEN)Starting PostgreSQL 18 container...$(NC)"
-	docker-compose up -d postgres
+docker-up: ## Start all infrastructure containers in Docker for local dev
+	@echo "$(GREEN)Starting all infrastructure containers...$(NC)"
+	docker compose up -d
 	@echo "$(GREEN)Waiting for PostgreSQL to be ready...$(NC)"
 	@sleep 5
 	@echo "$(GREEN)PostgreSQL is ready on localhost:5432$(NC)"
@@ -135,10 +139,10 @@ docker-up: ## Start PostgreSQL 18 in Docker for local dev
 
 docker-down: ## Stop Docker containers
 	@echo "$(YELLOW)Stopping Docker containers...$(NC)"
-	docker-compose down
+	docker compose down
 
 docker-logs: ## Show Docker container logs
-	docker-compose logs -f postgres
+	docker compose logs -f postgres
 
 # Database connection shortcuts
 db-connect-dev: ## Connect to dev database with psql

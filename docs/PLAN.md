@@ -1,46 +1,31 @@
-# PLAN: ecm-identity-service Deployment Readiness
+# Local Startup Plan: ecm-identity-service
 
-> Status: **DONE**
-> Goal: Review, test, run, and check all APIs for production deployment.
+This plan outlines the steps to start the `ecm-identity-service` server locally using Gradle and Docker.
 
-## 1. Analysis
-- **Service**: `ecm-identity-service`
-- **Modules**: `identity-user`, `identity-role`, `identity-app`, `identity-shared`
-- **Key Artifacts**:
-  - `UserController` (REST API)
-  - `UserService` (Business Logic)
-- **Current State**:
-  - `UserServiceTest` exists.
-  - `UserControllerTest` IMPLEMENTED.
-  - Security Config IMPLEMENTED.
-  - Build PASSING.
+## Analysis of "Fit"
+1. **Docker Compose**: 
+   - ✅ Provides Postgres (v18), Redis (v7), and RabbitMQ (v3).
+   - ⚠️ **Missing Kafka**: The application has `spring-kafka` dependency, but Kafka is not in `docker-compose.yml`.
+2. **Makefile**:
+   - ⚠️ **Profile Mismatch**: `make run-dev` forces `--spring.profiles.active=dev`, but `application-dev.properties` points to `dev-server`. Local dev should likely use `local`.
+3. **Configuration**:
+   - ✅ `.env` is set to `local`.
+   - ✅ `application-local.properties` matches the `docker-compose.yml` credentials.
 
-## 2. Tasks & Roadmap
+## PHASE 1: Infrastructure Setup
+1. **Start Services**: 
+   - Command: `make docker-up`
+   - This starts Postgres, Redis, and RabbitMQ.
 
-### Phase 1: Code Quality & Security Review (Agent: `security-auditor` + `backend-specialist`)
-- [x] **API Security Audit**: Check `UserController` for auth annotations (`@PreAuthorize`), input validation, and proper error handling.
-- [x] **Dependency Scan**: Check `build.gradle` for vulnerable dependencies.
-- [x] **Code Review**: Ensure `identity-user` follows modular monolith boundaries.
+## PHASE 2: Application Execution
+1. **Run Locally**:
+   - Use the `local` profile to match Docker services.
+   - Command: `./gradlew :identity-app:bootRun --args='--spring.profiles.active=local'`
+   - *Note: I will update the Makefile to support a `make run-local` or fix the default.*
 
-### Phase 2: Testing & Validation (Agent: `test-engineer`)
-- [x] **Run Existing Tests**: Execute `UserServiceTest` to ensure regression safety.
-- [x] **Implement Controller Tests**: Create `UserControllerTest` (MockMvc) to verify HTTP contracts.
-- [x] **Integration Check**: Verify `identity-user` integration with `identity-shared` (RoleLookup).
+## PHASE 3: Verification
+1. **Check Logs**: Ensure it connects to DB, Redis, and MQ.
+2. **Health Check**: `http://localhost:8080/actuator/health`
 
-### Phase 3: Infrastructure & Build (Agent: `devops-engineer`)
-- [x] **Build Check**: Run `./gradlew clean build` to verify multi-module compilation.
-- [x] **Container Check**: Review `docker-compose.yml` and `Dockerfile` for production readiness.
-- [x] **Environment**: Check `.env.example` vs required vars.
-
-### Phase 4: Runtime Verification (Agent: `orchestrator`)
-- [x] **Startup Test**: Boot application locally (Built successfully).
-- [x] **Admin Init**: Implemented `SystemAdminInitializer`.
-
-## 3. Execution Strategy
-This plan will be executed by the `orchestrate` workflow using 3+ agents in parallel where possible.
-
-## 4. Deliverables
-- [x] 100% Test Pass Rate
-- [x] Security Scan Report (Verified)
-- [x] Functional `UserController` Endpoint Verification
-- [x] Production-ready Build
+---
+**Status**: Awaiting User Approval to proceed with execution steps and minor Makefile/Plan improvements.
