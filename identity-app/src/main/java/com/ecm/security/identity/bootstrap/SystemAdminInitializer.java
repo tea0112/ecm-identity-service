@@ -24,7 +24,7 @@ public class SystemAdminInitializer implements CommandLineRunner {
   @Override
   public void run(String... args) throws Exception {
     if (userService.getUserByUsername("admin").isPresent()) {
-      log.info("System admin account already exists.");
+      log.debug("System admin account already exists.");
       return;
     }
 
