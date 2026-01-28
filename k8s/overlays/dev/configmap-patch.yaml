@@ -1,0 +1,27 @@
+# ConfigMap patch for DEV environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecm-identity-config
+data:
+  # Database - Dev server
+  DB_URL: "jdbc:postgresql://dev-postgres.database.svc.cluster.local:5432/ecm_identity_dev"
+  DB_USERNAME: "dev_ecm"
+  DB_SCHEMA: "dev_ecm"
+
+  # Liquibase - Include dev data seeding
+  LIQUIBASE_CONTEXTS: "dev"
+
+  # Logging - More verbose for debugging
+  LOG_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_APP: "DEBUG"
+  LOG_LEVEL_LIQUIBASE: "INFO"
+
+  # JPA - Show SQL for debugging
+  JPA_SHOW_SQL: "true"
+  JPA_FORMAT_SQL: "true"
+
+  # Security - More verbose errors in dev
+  ADMIN_EMAIL: "admin@dev.company.com"
+  ERROR_INCLUDE_MESSAGE: "always"
+  ERROR_INCLUDE_STACKTRACE: "on_param"

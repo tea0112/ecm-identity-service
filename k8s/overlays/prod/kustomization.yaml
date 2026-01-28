@@ -1,0 +1,27 @@
+# Kustomize overlay for PRODUCTION environment
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: ecm-identity-service-prod
+
+namespace: ecm-identity-prod
+
+commonLabels:
+  environment: prod
+
+resources:
+- ../../base
+
+patches:
+- path: configmap-patch.yaml
+- path: deployment-patch.yaml
+
+images:
+- name: ecm-identity-service
+  newName: your-registry.com/ecm-identity-service
+  newTag: v1.0.0 # Always use specific version in prod
+
+replicas:
+- name: ecm-identity-service
+  count: 3 # HA configuration

@@ -1,0 +1,27 @@
+# ConfigMap patch for PRODUCTION environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecm-identity-config
+data:
+  # Database - Production server
+  DB_URL: "jdbc:postgresql://prod-postgres.database.svc.cluster.local:5432/ecm_identity_prod"
+  DB_USERNAME: "prod_ecm"
+  DB_SCHEMA: "prod_ecm"
+
+  # Liquibase - Production only
+  LIQUIBASE_CONTEXTS: "prod"
+
+  # Logging - Minimal for performance
+  LOG_LEVEL_ROOT: "WARN"
+  LOG_LEVEL_APP: "INFO"
+  LOG_LEVEL_LIQUIBASE: "WARN"
+
+  # JPA - No SQL logging in production
+  JPA_SHOW_SQL: "false"
+  JPA_FORMAT_SQL: "false"
+
+  # Security - Hardened
+  ADMIN_EMAIL: "admin@company.com"
+  ERROR_INCLUDE_MESSAGE: "never"
+  ERROR_INCLUDE_STACKTRACE: "never"

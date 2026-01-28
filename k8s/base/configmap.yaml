@@ -1,0 +1,31 @@
+# ConfigMap for ECM Identity Service
+# Contains non-sensitive configuration that varies by environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecm-identity-config
+data:
+  # Database configuration (non-sensitive)
+  DB_URL: "jdbc:postgresql://postgres:5432/ecm_identity"
+  DB_USERNAME: "ecm_user"
+  DB_SCHEMA: "ecm"
+
+  # Liquibase
+  LIQUIBASE_CONTEXTS: "prod"
+
+  # Logging
+  LOG_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_APP: "INFO"
+  LOG_LEVEL_LIQUIBASE: "WARN"
+
+  # JPA
+  JPA_SHOW_SQL: "false"
+  JPA_FORMAT_SQL: "false"
+
+  # Server
+  SERVER_PORT: "8080"
+
+  # Security
+  ADMIN_EMAIL: "admin@company.com"
+  ERROR_INCLUDE_MESSAGE: "never"
+  ERROR_INCLUDE_STACKTRACE: "never"

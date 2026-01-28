@@ -1,0 +1,27 @@
+# ConfigMap patch for STAGING environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecm-identity-config
+data:
+  # Database - Staging server
+  DB_URL: "jdbc:postgresql://staging-postgres.database.svc.cluster.local:5432/ecm_identity_staging"
+  DB_USERNAME: "staging_ecm"
+  DB_SCHEMA: "staging_ecm"
+
+  # Liquibase
+  LIQUIBASE_CONTEXTS: "staging"
+
+  # Logging - Balanced for staging
+  LOG_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_APP: "INFO"
+  LOG_LEVEL_LIQUIBASE: "WARN"
+
+  # JPA
+  JPA_SHOW_SQL: "false"
+  JPA_FORMAT_SQL: "false"
+
+  # Security
+  ADMIN_EMAIL: "admin@staging.company.com"
+  ERROR_INCLUDE_MESSAGE: "always"
+  ERROR_INCLUDE_STACKTRACE: "never"

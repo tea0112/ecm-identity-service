@@ -1,0 +1,32 @@
+# Kustomize overlay for DEV environment
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: ecm-identity-service-dev
+
+# Namespace for dev environment
+namespace: ecm-identity-dev
+
+# Common labels for dev
+commonLabels:
+  environment: dev
+
+# Reference base configuration
+resources:
+- ../../base
+
+# Environment-specific patches
+patches:
+- path: configmap-patch.yaml
+
+# Image configuration (update with your registry)
+images:
+- name: ecm-identity-service
+  newName: ecm-identity-service
+  newTag: dev-latest
+
+# Replica count for dev
+replicas:
+- name: ecm-identity-service
+  count: 1

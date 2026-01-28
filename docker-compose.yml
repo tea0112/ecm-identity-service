@@ -1,17 +1,29 @@
+# ============================================================
+# ECM Identity Service - Local Development Infrastructure
+# ============================================================
+# Uses .env file for configuration. Copy .env.example to .env first.
+# ============================================================
+
 services:
   postgres:
     image: postgres:18-alpine
     container_name: ecm-identity-postgres
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ecm_identity_dev
-      POSTGRES_USER: dev_ecm
-      POSTGRES_PASSWORD: dev_ecm!23456
+      POSTGRES_USER: ${DB_USERNAME:-dev_ecm}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_ecm!23456}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev_ecm -d ecm_identity_dev"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME:-dev_ecm} -d ecm_identity_dev",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,12 +44,14 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: ecm-identity-rabbitmq
+    env_file:
+      - .env
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: dev_ecm
-      RABBITMQ_DEFAULT_PASS: dev_ecm!23456
+      RABBITMQ_DEFAULT_USER: ${DB_USERNAME:-dev_ecm}
+      RABBITMQ_DEFAULT_PASS: ${DB_PASSWORD:-dev_ecm!23456}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:

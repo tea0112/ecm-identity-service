@@ -1,0 +1,18 @@
+# Kustomize base configuration for ECM Identity Service
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: ecm-identity-service
+
+# Common labels applied to all resources
+commonLabels:
+  app: ecm-identity-service
+  app.kubernetes.io/name: ecm-identity-service
+  app.kubernetes.io/component: backend
+
+resources:
+- configmap.yaml
+- secret.yaml
+- deployment.yaml
+- service.yaml

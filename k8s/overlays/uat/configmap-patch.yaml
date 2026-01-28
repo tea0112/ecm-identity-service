@@ -1,0 +1,27 @@
+# ConfigMap patch for UAT environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecm-identity-config
+data:
+  # Database - UAT server
+  DB_URL: "jdbc:postgresql://uat-postgres.database.svc.cluster.local:5432/ecm_identity_uat"
+  DB_USERNAME: "uat_ecm"
+  DB_SCHEMA: "uat_ecm"
+
+  # Liquibase
+  LIQUIBASE_CONTEXTS: "uat"
+
+  # Logging - Production-like
+  LOG_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_APP: "INFO"
+  LOG_LEVEL_LIQUIBASE: "WARN"
+
+  # JPA - No SQL logging
+  JPA_SHOW_SQL: "false"
+  JPA_FORMAT_SQL: "false"
+
+  # Security - Production-like
+  ADMIN_EMAIL: "admin@uat.company.com"
+  ERROR_INCLUDE_MESSAGE: "never"
+  ERROR_INCLUDE_STACKTRACE: "never"

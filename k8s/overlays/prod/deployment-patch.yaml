@@ -1,0 +1,66 @@
+# Deployment patch for PRODUCTION environment
+# Additional production hardening
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecm-identity-service
+spec:
+  # Rolling update strategy for zero-downtime
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    spec:
+      # Pod anti-affinity for HA (spread across nodes)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: ecm-identity-service
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+      - name: ecm-identity-service
+        # Increased resources for production
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+
+        # Stricter security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+
+        # Volume mounts for read-only filesystem
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+
+      # Volumes for temp files (required for read-only root)
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+
+      # Topology spread for better distribution
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: ecm-identity-service
