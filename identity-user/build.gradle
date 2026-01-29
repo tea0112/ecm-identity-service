@@ -11,6 +11,9 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     
+    // OpenAPI/Swagger Annotations - must match SpringDoc 2.8.15's swagger-core version
+    implementation 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.41'
+    
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     
